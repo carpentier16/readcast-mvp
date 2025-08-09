@@ -1,42 +1,11 @@
-# Render Blueprint (API + Worker + Redis)
+# Render Blueprint (Web = API + Worker, + Redis)
 services:
   - type: web
     name: audiobook-api
     env: docker
-    plan: free
+    plan: free          # ou starter/professional si tu veux plus de perf
     autoDeploy: true
     healthCheckPath: /health
-    envVars:
-      - key: STORAGE_MODE
-        value: s3
-      - key: S3_ENDPOINT_URL
-        sync: false
-      - key: S3_BUCKET
-        sync: false
-      - key: AWS_ACCESS_KEY_ID
-        sync: false
-      - key: AWS_SECRET_ACCESS_KEY
-        sync: false
-      - key: AWS_REGION
-        sync: false
-      - key: ELEVENLABS_API_KEY
-        sync: false
-      - key: ELEVENLABS_VOICE_ID
-        value: Rachel
-      - key: REDIS_URL
-        fromService:
-          name: audiobook-redis
-          type: redis
-          property: connectionString
-      - key: RQ_QUEUE_NAME
-        value: mvp_jobs
-      - key: DATABASE_URL
-        value: sqlite:///./mvp.db
-
-  - type: worker
-    name: audiobook-worker
-    env: docker
-    plan: free
     envVars:
       - key: STORAGE_MODE
         value: s3
@@ -69,4 +38,3 @@ services:
     ipAllowList: []
     plan: free
     maxmemoryPolicy: noeviction
-
