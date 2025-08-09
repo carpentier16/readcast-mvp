@@ -39,7 +39,6 @@ services:
     env: docker
     plan: starter
     autoDeploy: true
-    startCommand: rq worker --url ${REDIS_URL} ${RQ_QUEUE_NAME}
     envVars:
       - key: ENV
         value: prod
