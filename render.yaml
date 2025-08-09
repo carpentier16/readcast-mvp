@@ -1,0 +1,76 @@
+# Render Blueprint (API + Worker + Redis)
+services:
+  - type: web
+    name: audiobook-api
+    env: docker
+    plan: starter
+    autoDeploy: true
+    healthCheckPath: /health
+    envVars:
+      - key: ENV
+        value: prod
+      - key: STORAGE_MODE
+        value: s3
+      - key: S3_ENDPOINT_URL
+        sync: false
+      - key: S3_BUCKET
+        sync: false
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+      - key: AWS_REGION
+        sync: false
+      - key: ELEVENLABS_API_KEY
+        sync: false
+      - key: ELEVENLABS_VOICE_ID
+        value: Rachel
+      - key: REDIS_URL
+        fromService:
+          name: audiobook-redis
+          type: redis
+          property: connectionString
+      - key: RQ_QUEUE_NAME
+        value: mvp_jobs
+      - key: DATABASE_URL
+        value: sqlite:///./mvp.db
+  - type: worker
+    name: audiobook-worker
+    env: docker
+    plan: starter
+    autoDeploy: true
+    startCommand: rq worker --url ${REDIS_URL} ${RQ_QUEUE_NAME}
+    envVars:
+      - key: ENV
+        value: prod
+      - key: STORAGE_MODE
+        value: s3
+      - key: S3_ENDPOINT_URL
+        sync: false
+      - key: S3_BUCKET
+        sync: false
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+      - key: AWS_REGION
+        sync: false
+      - key: ELEVENLABS_API_KEY
+        sync: false
+      - key: ELEVENLABS_VOICE_ID
+        value: Rachel
+      - key: REDIS_URL
+        fromService:
+          name: audiobook-redis
+          type: redis
+          property: connectionString
+      - key: RQ_QUEUE_NAME
+        value: mvp_jobs
+      - key: DATABASE_URL
+        value: sqlite:///./mvp.db
+  - type: redis
+    name: audiobook-redis
+    ipAllowList: []
+    plan: starter
+    maxmemoryPolicy: noeviction
+    version: 7
