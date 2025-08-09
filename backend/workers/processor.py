@@ -1,11 +1,11 @@
 import os, uuid, asyncio
-from .services.extract import extract_text_from_pdf
-from .services.tts import synthesize
-from .services.post_audio import concat_and_normalize, make_m4b_from_mp3
-from .services.storage import put_file
-from .services.utils import safe_slug
-from .models.db import Job, JobStatus, get_engine, get_session_maker
-from .settings import settings
+from ..services.extract import extract_text_from_pdf
+from ..services.tts import synthesize
+from ..services.post_audio import concat_and_normalize, make_m4b_from_mp3
+from ..services.storage import put_file
+from ..services.utils import safe_slug
+from ..models.db import Job, JobStatus, get_engine, get_session_maker
+from ..settings import settings
 
 engine = get_engine(settings.DATABASE_URL)
 Session = get_session_maker(engine)
