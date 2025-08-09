@@ -3,12 +3,10 @@ services:
   - type: web
     name: audiobook-api
     env: docker
-    plan: starter
+    plan: free
     autoDeploy: true
     healthCheckPath: /health
     envVars:
-      - key: ENV
-        value: prod
       - key: STORAGE_MODE
         value: s3
       - key: S3_ENDPOINT_URL
@@ -34,14 +32,12 @@ services:
         value: mvp_jobs
       - key: DATABASE_URL
         value: sqlite:///./mvp.db
+
   - type: worker
     name: audiobook-worker
     env: docker
-    plan: starter
-    autoDeploy: true
+    plan: free
     envVars:
-      - key: ENV
-        value: prod
       - key: STORAGE_MODE
         value: s3
       - key: S3_ENDPOINT_URL
@@ -67,9 +63,10 @@ services:
         value: mvp_jobs
       - key: DATABASE_URL
         value: sqlite:///./mvp.db
+
   - type: redis
     name: audiobook-redis
     ipAllowList: []
-    plan: starter
+    plan: free
     maxmemoryPolicy: noeviction
-  
+
