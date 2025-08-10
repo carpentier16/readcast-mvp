@@ -10,7 +10,14 @@ import rq
 import redis
 
 from .settings import settings
-from .models.db import Job, JobStatus, get_engine, get_session_maker
+from .models.db import (
+    Job,
+    JobStatus,
+    get_engine,
+    get_session_maker,
+    Base,  # << IMPORTANT: on importe Base pour create_all
+)
+
 from .workers.processor import process_job
 
 # ---------- FastAPI ----------
@@ -20,8 +27,8 @@ app = FastAPI(title="Readcast API", version="0.1.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "https://readcast-mvp.vercel.app",  # ton domaine Vercel
-        # "http://localhost:5173",  # garde-le commenté si tu ne fais pas de local
+        "https://readcast-mvp.vercel.app",
+        # "http://localhost:5173",
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -31,6 +38,15 @@ app.add_middleware(
 # ---------- DB ----------
 engine = get_engine(settings.DATABASE_URL)
 SessionLocal = get_session_maker(engine)
+
+# >>> Crée les tables au démarrage si elles n'existent pas
+@app.on_event("startup")
+def _init_db():
+    try:
+        Base.metadata.create_all(bind=engine)
+        # print("DB ready")  # optionnel pour logs
+    except Exception as e:
+        print(f"[startup] DB init error: {e}")
 
 # ---------- RQ / Redis ----------
 redis_conn = redis.from_url(settings.REDIS_URL)
@@ -51,9 +67,7 @@ class JobOut(BaseModel):
 
 # ---------- Utils ----------
 def _save_upload_to_inputs(upload: UploadFile, job_id: str) -> str:
-    """
-    Enregistre le PDF uploadé dans le dossier inputs avec un nom stable.
-    """
+    """Enregistre le PDF uploadé dans le dossier inputs avec un nom stable."""
     base_dir = settings.LOCAL_STORAGE_PATH
     inputs_dir = os.path.join(base_dir, "inputs")
     os.makedirs(inputs_dir, exist_ok=True)
@@ -89,9 +103,8 @@ async def create_job(
     lang: str = Form("fra"),
 ):
     """
-    Crée un job:
     1) Enregistre le PDF en local
-    2) Enregistre en DB (status=PENDING)
+    2) Crée la ligne en DB (PENDING)
     3) Enqueue le worker RQ
     """
     if not file.filename.lower().endswith(".pdf"):
@@ -113,10 +126,8 @@ async def create_job(
         session.add(job)
         session.commit()
 
-        # enqueue worker
         queue.enqueue(process_job, job_id, local_path, voice, lang)
 
-        # retourne l'état initial
         job = session.get(Job, job_id)
         return _serialize_job(job)
     finally:
@@ -125,9 +136,6 @@ async def create_job(
 
 @app.get("/api/jobs/{job_id}", response_model=JobOut)
 def get_job(job_id: str):
-    """
-    Récupère l'état du job + URLs quand c'est DONE.
-    """
     session = SessionLocal()
     try:
         job = session.get(Job, job_id)
@@ -136,4 +144,3 @@ def get_job(job_id: str):
         return _serialize_job(job)
     finally:
         session.close()
-
