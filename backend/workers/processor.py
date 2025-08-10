@@ -1,5 +1,4 @@
 import os
-import uuid
 import asyncio
 import traceback
 
@@ -14,7 +13,9 @@ from ..settings import settings
 engine = get_engine(settings.DATABASE_URL)
 Session = get_session_maker(engine)
 
+
 def chunk_text(text: str, max_chars: int = 1000):
+    """Coupe le texte en morceaux ~max_chars, en respectant les sauts de ligne."""
     parts, buf, count = [], [], 0
     for line in text.splitlines():
         if not line.strip():
@@ -28,6 +29,23 @@ def chunk_text(text: str, max_chars: int = 1000):
         parts.append(" ".join(buf))
     return parts
 
+
+def _looks_like_voice_id(v: str) -> bool:
+    """Heuristique simple: les IDs ElevenLabs sont des chaînes alphanumériques assez longues."""
+    v = (v or "").strip()
+    return len(v) >= 20 and v.replace("_", "").isalnum()
+
+
+def resolve_voice_id(v: str) -> str:
+    """
+    Si v ressemble à un voice_id → on le garde.
+    Sinon (ex: 'Rachel'), on utilise ELEVENLABS_VOICE_ID depuis l'env.
+    """
+    if _looks_like_voice_id(v):
+        return v
+    return settings.ELEVENLABS_VOICE_ID
+
+
 def process_job(job_id: str, local_path: str, voice: str = "Rachel", lang: str = "fra"):
     session = Session()
     try:
@@ -37,6 +55,9 @@ def process_job(job_id: str, local_path: str, voice: str = "Rachel", lang: str =
 
         job.status = JobStatus.RUNNING
         session.commit()
+
+        # 0) Résoudre la voix (nom → ID via variable d'env)
+        voice_id = resolve_voice_id(voice)
 
         # 1) OCR / extraction
         text = extract_text_from_pdf(local_path, lang=lang)
@@ -49,7 +70,7 @@ def process_job(job_id: str, local_path: str, voice: str = "Rachel", lang: str =
         pieces = []
         for i, chunk in enumerate(chunks):
             out_piece = os.path.join(tmp_dir, f"{i:05d}.mp3")
-            asyncio.run(synthesize(chunk, voice, out_piece))
+            asyncio.run(synthesize(chunk, voice_id, out_piece))
             pieces.append(out_piece)
 
         # 3) Assemblage + normalisation
@@ -64,7 +85,7 @@ def process_job(job_id: str, local_path: str, voice: str = "Rachel", lang: str =
         m4b_path = os.path.join(out_abs, f"{base_name}.m4b")
         make_m4b_from_mp3(mp3_path, [], m4b_path)
 
-        # 4) Upload vers le stockage (S3/B2)
+        # 4) Upload vers S3/B2
         mp3_url = put_file(mp3_path, f"{out_rel}/output.mp3")
         m4b_url = put_file(m4b_path, f"{out_rel}/output.m4b")
 
