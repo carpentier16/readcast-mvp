@@ -1,4 +1,4 @@
-import os, uuid, asyncio
+import os, uuid, asyncio, traceback
 from ..services.extract import extract_text_from_pdf
 from ..services.tts import synthesize
 from ..services.post_audio import concat_and_normalize, make_m4b_from_mp3
@@ -39,6 +39,7 @@ def process_job(job_id: str, local_path: str, voice: str = "Rachel", lang: str =
         wav_files = []
         out_tmp_dir = os.path.join(settings.LOCAL_STORAGE_PATH, f"tmp/{job_id}")
         os.makedirs(out_tmp_dir, exist_ok=True)
+
         for i, chunk in enumerate(chunks):
             out_wav = os.path.join(out_tmp_dir, f"{i:05d}.mp3")
             asyncio.run(synthesize(chunk, voice, out_wav))
@@ -61,15 +62,20 @@ def process_job(job_id: str, local_path: str, voice: str = "Rachel", lang: str =
         job.output_mp3_url = mp3_url
         job.output_m4b_url = m4b_url
         session.commit()
-    import traceback
-# ...
-except Exception as e:
-    job = session.get(Job, job_id)
-    if job:
-        job.status = JobStatus.ERROR
-        job.error = traceback.format_exc()
-        session.commit()
-    raise
+
+    except Exception:
+        # Log complet dans la DB pour debug
+        err = traceback.format_exc()
+        job = session.get(Job, job_id)
+        if job:
+            job.status = JobStatus.ERROR
+            job.error = err
+            session.commit()
+        # ne pas re-raise si tu veux éviter que le container crash
+        # raise
+    finally:
+        session.close()
+
 
     finally:
         session.close()
