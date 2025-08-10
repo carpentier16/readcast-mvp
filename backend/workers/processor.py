@@ -1,4 +1,8 @@
-import os, uuid, asyncio, traceback
+import os
+import uuid
+import asyncio
+import traceback
+
 from ..services.extract import extract_text_from_pdf
 from ..services.tts import synthesize
 from ..services.post_audio import concat_and_normalize, make_m4b_from_mp3
@@ -30,34 +34,41 @@ def process_job(job_id: str, local_path: str, voice: str = "Rachel", lang: str =
         job = session.get(Job, job_id)
         if not job:
             return
+
         job.status = JobStatus.RUNNING
         session.commit()
 
+        # 1) OCR / extraction
         text = extract_text_from_pdf(local_path, lang=lang)
         chunks = chunk_text(text)
 
-        wav_files = []
-        out_tmp_dir = os.path.join(settings.LOCAL_STORAGE_PATH, f"tmp/{job_id}")
-        os.makedirs(out_tmp_dir, exist_ok=True)
+        # 2) TTS sur chaque chunk
+        tmp_dir = os.path.join(settings.LOCAL_STORAGE_PATH, f"tmp/{job_id}")
+        os.makedirs(tmp_dir, exist_ok=True)
 
+        pieces = []
         for i, chunk in enumerate(chunks):
-            out_wav = os.path.join(out_tmp_dir, f"{i:05d}.mp3")
-            asyncio.run(synthesize(chunk, voice, out_wav))
-            wav_files.append(out_wav)
+            out_piece = os.path.join(tmp_dir, f"{i:05d}.mp3")
+            asyncio.run(synthesize(chunk, voice, out_piece))
+            pieces.append(out_piece)
 
-        out_dir_rel = f"outputs/{job_id}"
-        out_dir_abs = os.path.join(settings.LOCAL_STORAGE_PATH, out_dir_rel)
-        os.makedirs(out_dir_abs, exist_ok=True)
+        # 3) Assemblage + normalisation
+        out_rel = f"outputs/{job_id}"
+        out_abs = os.path.join(settings.LOCAL_STORAGE_PATH, out_rel)
+        os.makedirs(out_abs, exist_ok=True)
 
-        mp3_path = os.path.join(out_dir_abs, f"{safe_slug(job.input_filename)}.mp3")
-        concat_and_normalize(wav_files, mp3_path)
+        base_name = safe_slug(job.input_filename)
+        mp3_path = os.path.join(out_abs, f"{base_name}.mp3")
+        concat_and_normalize(pieces, mp3_path)
 
-        m4b_path = os.path.join(out_dir_abs, f"{safe_slug(job.input_filename)}.m4b")
+        m4b_path = os.path.join(out_abs, f"{base_name}.m4b")
         make_m4b_from_mp3(mp3_path, [], m4b_path)
 
-        mp3_url = put_file(mp3_path, f"{out_dir_rel}/output.mp3")
-        m4b_url = put_file(m4b_path, f"{out_dir_rel}/output.m4b")
+        # 4) Upload vers le stockage (S3/B2)
+        mp3_url = put_file(mp3_path, f"{out_rel}/output.mp3")
+        m4b_url = put_file(m4b_path, f"{out_rel}/output.m4b")
 
+        # 5) Fin de job
         job.status = JobStatus.DONE
         job.output_mp3_url = mp3_url
         job.output_m4b_url = m4b_url
@@ -71,11 +82,5 @@ def process_job(job_id: str, local_path: str, voice: str = "Rachel", lang: str =
             job.status = JobStatus.ERROR
             job.error = err
             session.commit()
-        # ne pas re-raise si tu veux éviter que le container crash
-        # raise
-    finally:
-        session.close()
-
-
     finally:
         session.close()
