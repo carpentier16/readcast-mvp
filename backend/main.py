@@ -1,71 +1,139 @@
-from fastapi import FastAPI, UploadFile, File, Form
+# backend/main.py
+import os
+from typing import Optional
+from fastapi import FastAPI, UploadFile, File, HTTPException, Form
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
 from uuid import uuid4
-import os, shutil
+import shutil
+import rq
+import redis
+
 from .settings import settings
-from .models.db import Base, get_engine, get_session_maker, Job, JobStatus
-from sqlalchemy import select
-from redis import Redis
-from rq import Queue
+from .models.db import Job, JobStatus, get_engine, get_session_maker
 from .workers.processor import process_job
 
-engine = get_engine(settings.DATABASE_URL)
-Base.metadata.create_all(engine)
-SessionLocal = get_session_maker(engine)
+# ---------- FastAPI ----------
+app = FastAPI(title="Readcast API", version="0.1.0")
 
-app = FastAPI(title="Audiobook MVP API")
+# CORS — autorise ton frontend Vercel à appeler l’API
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "https://readcast-mvp.vercel.app",  # ton domaine Vercel
+        # "http://localhost:5173",  # garde-le commenté si tu ne fais pas de local
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-if settings.STORAGE_MODE == "local":
-    os.makedirs(settings.LOCAL_STORAGE_PATH, exist_ok=True)
-    app.mount("/files", StaticFiles(directory=settings.LOCAL_STORAGE_PATH), name="files")
+# ---------- DB ----------
+engine = get_engine(settings.DATABASE_URL)
+SessionLocal = get_session_maker(engine)
 
-redis = Redis.from_url(settings.REDIS_URL)
-queue = Queue(settings.RQ_QUEUE_NAME, connection=redis)
+# ---------- RQ / Redis ----------
+redis_conn = redis.from_url(settings.REDIS_URL)
+queue = rq.Queue(settings.RQ_QUEUE_NAME, connection=redis_conn)
 
+# ---------- Schemas ----------
+class JobOut(BaseModel):
+    id: str
+    status: str
+    input_filename: str
+    output_mp3_url: Optional[str] = None
+    output_m4b_url: Optional[str] = None
+    error: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+# ---------- Utils ----------
+def _save_upload_to_inputs(upload: UploadFile, job_id: str) -> str:
+    """
+    Enregistre le PDF uploadé dans le dossier inputs avec un nom stable.
+    """
+    base_dir = settings.LOCAL_STORAGE_PATH
+    inputs_dir = os.path.join(base_dir, "inputs")
+    os.makedirs(inputs_dir, exist_ok=True)
+
+    safe_name = upload.filename or f"{job_id}.pdf"
+    dst_path = os.path.join(inputs_dir, f"{job_id}_{safe_name.replace(' ', '_')}")
+    with open(dst_path, "wb") as f:
+        shutil.copyfileobj(upload.file, f)
+    return dst_path
+
+
+def _serialize_job(job: Job) -> JobOut:
+    return JobOut(
+        id=job.id,
+        status=job.status.value if hasattr(job.status, "value") else str(job.status),
+        input_filename=job.input_filename,
+        output_mp3_url=job.output_mp3_url,
+        output_m4b_url=job.output_m4b_url,
+        error=job.error,
+    )
+
+
+# ---------- Routes ----------
 @app.get("/health")
 def health():
-    return {"status": "ok"}
+    return {"ok": True}
 
-@app.post("/api/jobs")
-async def create_job(file: UploadFile = File(...), voice: str = Form("Rachel"), lang: str = Form("fra")):
+
+@app.post("/api/jobs", response_model=JobOut)
+async def create_job(
+    file: UploadFile = File(...),
+    voice: str = Form("Rachel"),
+    lang: str = Form("fra"),
+):
+    """
+    Crée un job:
+    1) Enregistre le PDF en local
+    2) Enregistre en DB (status=PENDING)
+    3) Enqueue le worker RQ
+    """
+    if not file.filename.lower().endswith(".pdf"):
+        raise HTTPException(status_code=422, detail="Le fichier doit être un PDF")
+
     job_id = str(uuid4())
-    input_dir = os.path.join(settings.LOCAL_STORAGE_PATH, "inputs")
-    os.makedirs(input_dir, exist_ok=True)
-    input_path = os.path.join(input_dir, f"{job_id}_{file.filename}")
-    with open(input_path, "wb") as f:
-        shutil.copyfileobj(file.file, f)
+    local_path = _save_upload_to_inputs(file, job_id)
 
     session = SessionLocal()
-    jb = Job(id=job_id, input_filename=file.filename, status=JobStatus.PENDING, voice=voice, lang=lang)
-    session.add(jb)
-    session.commit()
-    session.close()
+    try:
+        job = Job(
+            id=job_id,
+            status=JobStatus.PENDING,
+            input_filename=file.filename,
+            output_mp3_url=None,
+            output_m4b_url=None,
+            error=None,
+        )
+        session.add(job)
+        session.commit()
 
-    queue.enqueue(process_job, job_id, input_path, voice, lang)
-    return {"job_id": job_id}
+        # enqueue worker
+        queue.enqueue(process_job, job_id, local_path, voice, lang)
 
-@app.get("/api/jobs/{job_id}")
-def get_job(job_id: str):
-    session = SessionLocal()
-    jb = session.get(Job, job_id)
-    if not jb:
+        # retourne l'état initial
+        job = session.get(Job, job_id)
+        return _serialize_job(job)
+    finally:
         session.close()
-        return {"error": "not found"}
-    data = {
-        "id": jb.id,
-        "status": jb.status,
-        "input_filename": jb.input_filename,
-        "output_mp3_url": jb.output_mp3_url if jb.output_mp3_url else None,
-        "output_m4b_url": jb.output_m4b_url if jb.output_m4b_url else None,
-        "error": jb.error
-    }
-    session.close()
-    return data
+
+
+@app.get("/api/jobs/{job_id}", response_model=JobOut)
+def get_job(job_id: str):
+    """
+    Récupère l'état du job + URLs quand c'est DONE.
+    """
+    session = SessionLocal()
+    try:
+        job = session.get(Job, job_id)
+        if not job:
+            raise HTTPException(status_code=404, detail="Job introuvable")
+        return _serialize_job(job)
+    finally:
+        session.close()
+
