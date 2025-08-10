@@ -61,12 +61,15 @@ def process_job(job_id: str, local_path: str, voice: str = "Rachel", lang: str =
         job.output_mp3_url = mp3_url
         job.output_m4b_url = m4b_url
         session.commit()
-    except Exception as e:
-        job = session.get(Job, job_id)
-        if job:
-            job.status = JobStatus.ERROR
-            job.error = str(e)
-            session.commit()
-        raise
+    import traceback
+# ...
+except Exception as e:
+    job = session.get(Job, job_id)
+    if job:
+        job.status = JobStatus.ERROR
+        job.error = traceback.format_exc()
+        session.commit()
+    raise
+
     finally:
         session.close()
