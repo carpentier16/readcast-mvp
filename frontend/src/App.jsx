@@ -1,76 +1,116 @@
-import React, { useState } from 'react'
+import { useRef, useState, useEffect } from "react";
 
-const API = import.meta.env.VITE_API_BASE || 'http://localhost:8000'
+const API_BASE = import.meta.env.VITE_API_BASE; // ex: https://audiobook-api-xbmz.onrender.com
 
 export default function App() {
-  const [file, setFile] = useState(null)
-  const [jobId, setJobId] = useState(null)
-  const [job, setJob] = useState(null)
-  const [voice, setVoice] = useState('Rachel')
-  const [lang, setLang] = useState('fra')
-  const [loading, setLoading] = useState(false)
+  const fileRef = useRef(null);
+  const [jobId, setJobId] = useState("");
+  const [status, setStatus] = useState("");
+  const [mp3, setMp3] = useState("");
+  const [m4b, setM4b] = useState("");
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  const submit = async (e) => {
-    e.preventDefault()
-    if (!file) return
-    setLoading(true)
-    const form = new FormData()
-    form.append('file', file)
-    form.append('voice', voice)
-    form.append('lang', lang)
+  async function startJob(e) {
+    e.preventDefault();
+    setError("");
+    setStatus("");
+    setMp3("");
+    setM4b("");
+    setJobId("");
+    setIsLoading(true);
+
+    const file = fileRef.current?.files?.[0];
+    if (!file) {
+      setError("Choisis un PDF");
+      setIsLoading(false);
+      return;
+    }
+
     try {
-      const res = await fetch(`${API}/api/jobs`, { method: 'POST', body: form })
-      const data = await res.json()
-      setJobId(data.job_id)
-      setJob(null)
-    } finally {
-      setLoading(false)
+      const form = new FormData();
+      form.append("file", file);
+      // Optionnel: form.append("voice", "Rachel"); form.append("lang", "fra");
+
+      const r = await fetch(`${API_BASE}/api/jobs`, { method: "POST", body: form });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.detail || "Échec création job");
+      setJobId(data.id);
+      setStatus(data.status);
+    } catch (e) {
+      setError(String(e));
+      setIsLoading(false);
     }
   }
 
-  const refresh = async () => {
-    if (!jobId) return
-    const res = await fetch(`${API}/api/jobs/${jobId}`)
-    const data = await res.json()
-    setJob(data)
-  }
+  // Poll du statut
+  useEffect(() => {
+    if (!jobId) return;
+    setIsLoading(true);
+
+    const it = setInterval(async () => {
+      try {
+        const r = await fetch(`${API_BASE}/api/jobs/${jobId}`);
+        const data = await r.json();
+        setStatus(data.status);
+        if (data.output_mp3_url) setMp3(data.output_mp3_url);
+        if (data.output_m4b_url) setM4b(data.output_m4b_url);
+        if (data.error) setError(data.error);
+
+        if (data.status === "DONE" || data.status === "ERROR") {
+          clearInterval(it);
+          setIsLoading(false);
+        }
+      } catch (e) {
+        setError(String(e));
+        clearInterval(it);
+        setIsLoading(false);
+      }
+    }, 3000);
+
+    return () => clearInterval(it);
+  }, [jobId]);
 
   return (
-    <div style={{maxWidth: 720, margin: '40px auto', fontFamily: 'inter, system-ui, sans-serif'}}>
-      <h1>Audiobook MVP</h1>
-      <form onSubmit={submit}>
-        <input type="file" accept=".pdf,.doc,.docx,.epub" onChange={e => setFile(e.target.files[0])} />
-        <div style={{marginTop: 8, display: 'flex', gap: 12}}>
-          <label>Voice: <input value={voice} onChange={e => setVoice(e.target.value)} /></label>
-          <label>Lang: <input value={lang} onChange={e => setLang(e.target.value)} /></label>
-        </div>
-        <button style={{marginTop: 12}} type="submit" disabled={loading}>{loading ? 'Creating…' : 'Create Job'}</button>
+    <div style={{ maxWidth: 760, margin: "40px auto", fontFamily: "Inter, system-ui, sans-serif", padding: "0 16px" }}>
+      <h1 style={{ marginBottom: 8 }}>📖→🎧 Readcast</h1>
+      <p style={{ color: "#666", marginTop: 0 }}>Transforme un PDF/scan manuscrit en audiobook (MVP).</p>
+
+      <form onSubmit={startJob} style={{ display: "grid", gap: 12, marginTop: 16 }}>
+        <input type="file" accept="application/pdf" ref={fileRef} />
+        <button type="submit" disabled={isLoading} style={{ padding: "10px 14px" }}>
+          {isLoading ? "Traitement…" : "Convertir en audiobook"}
+        </button>
       </form>
 
       {jobId && (
-        <div style={{marginTop: 20}}>
-          <div>Job ID: {jobId}</div>
-          <button onClick={refresh}>Refresh</button>
+        <div style={{ marginTop: 16 }}>
+          <div>Job id&nbsp;: <code>{jobId}</code></div>
+          <div>Statut&nbsp;: <strong>{status}</strong></div>
         </div>
       )}
 
-      {job && (
-        <div style={{marginTop: 20, padding: 12, border: '1px solid #ddd', borderRadius: 8}}>
-          <div>Status: <b>{job.status}</b></div>
-          {job.error && <pre style={{color: 'crimson', whiteSpace: 'pre-wrap'}}>{job.error}</pre>}
-          {job.output_mp3_url && (
-            <div style={{marginTop: 8}}>
-              <audio controls src={job.output_mp3_url.startsWith('/') ? `${API}${job.output_mp3_url}` : job.output_mp3_url} />
-              <div><a href={job.output_mp3_url} target="_blank">Download MP3</a></div>
-            </div>
-          )}
-          {job.output_m4b_url && (
-            <div style={{marginTop: 8}}>
-              <div><a href={job.output_m4b_url} target="_blank">Download M4B</a></div>
-            </div>
-          )}
+      {error && (
+        <pre style={{ marginTop: 16, background: "#fee", padding: 12, whiteSpace: "pre-wrap", border: "1px solid #fbb" }}>
+          {error}
+        </pre>
+      )}
+
+      {mp3 && (
+        <div style={{ marginTop: 24 }}>
+          <h3>MP3</h3>
+          <audio controls src={mp3} style={{ width: "100%" }} />
+          <div><a href={mp3} target="_blank" rel="noreferrer">Télécharger MP3</a></div>
+        </div>
+      )}
+
+      {m4b && (
+        <div style={{ marginTop: 24 }}>
+          <h3>M4B</h3>
+          <audio controls src={m4b} style={{ width: "100%" }} />
+          <div><a href={m4b} target="_blank" rel="noreferrer">Télécharger M4B</a></div>
         </div>
       )}
     </div>
-  )
+  );
 }
