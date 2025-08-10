@@ -1,7 +1,9 @@
+# backend/services/storage.py
 import os
-from ..settings import settings
-from . import utils
 import boto3
+from botocore.config import Config
+
+from ..settings import settings
 
 def _s3_client():
     session = boto3.session.Session(
@@ -9,25 +11,31 @@ def _s3_client():
         aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
         region_name=settings.AWS_REGION,
     )
-    if settings.S3_ENDPOINT_URL:
-        return session.client('s3', endpoint_url=settings.S3_ENDPOINT_URL)
-    return session.client('s3')
-
-def put_file_local(src_path: str, dst_path: str) -> str:
-    abspath = os.path.join(settings.LOCAL_STORAGE_PATH, dst_path.lstrip('/'))
-    os.makedirs(os.path.dirname(abspath), exist_ok=True)
-    utils.copy_file(src_path, abspath)
-    return f"/{dst_path.lstrip('/')}"
+    cfg = Config(s3={"addressing_style": "auto"})
+    return session.client("s3", endpoint_url=settings.S3_ENDPOINT_URL, config=cfg)
 
 def put_file_s3(src_path: str, dst_path: str) -> str:
     client = _s3_client()
-    key = dst_path.lstrip('/')
-    client.upload_file(src_path, settings.S3_BUCKET, key)
-    if settings.PUBLIC_CDN_BASE:
-        return f"{settings.PUBLIC_CDN_BASE.rstrip('/')}/{key}"
-    return f"s3://{settings.S3_BUCKET}/{key}"
+    bucket = settings.S3_BUCKET
+    client.upload_file(src_path, bucket, dst_path, ExtraArgs={"ContentType": _guess_content_type(dst_path)})
+    # URL présignée valide X secondes (par défaut 7 jours)
+    expires = int(os.getenv("S3_SIGN_URL_EXPIRY", "604800"))
+    url = client.generate_presigned_url(
+        ClientMethod="get_object",
+        Params={"Bucket": bucket, "Key": dst_path},
+        ExpiresIn=expires,
+    )
+    return url
+
+def _guess_content_type(key: str) -> str:
+    if key.endswith(".mp3"):
+        return "audio/mpeg"
+    if key.endswith(".m4b") or key.endswith(".m4a"):
+        return "audio/mp4"
+    if key.endswith(".pdf"):
+        return "application/pdf"
+    return "application/octet-stream"
 
 def put_file(src_path: str, dst_path: str) -> str:
-    if settings.STORAGE_MODE == "s3":
-        return put_file_s3(src_path, dst_path)
-    return put_file_local(src_path, dst_path)
+    # Pour l’instant on n’implémente que S3 (Backblaze)
+    return put_file_s3(src_path, dst_path)
