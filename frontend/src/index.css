@@ -1,19 +1,9 @@
-html, body, #root { height: 100%; }
-body { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Font smoothing for a clean SaaS look */
-:root {
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-/* Subtle progress shimmer */
-@keyframes progress {
-  0% { filter: saturate(0.95) brightness(1); }
-  50% { filter: saturate(1.05) brightness(1.1); }
-  100% { filter: saturate(0.95) brightness(1); }
+@layer base {
+  html, body, #root {
+    height: 100%;
+  }
 }
