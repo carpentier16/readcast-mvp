@@ -1,351 +1,308 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 const API_BASE = import.meta.env.VITE_API_BASE?.replace(/\/$/, "") || "";
 
-// ----- UI helpers -----
-function cn(...cls) {
-  return cls.filter(Boolean).join(" ");
-}
-function ProgressBar({ value }) {
+const prettyBytes = (n) =>
+  n === 0 ? "0 B" : ["B", "KB", "MB", "GB"].map((u, i) => {
+    const p = Math.pow(1024, i);
+    if (n < p * 1024) return `${(n / p).toFixed(i ? 2 : 0)} ${u}`;
+    return null;
+  }).filter(Boolean).at(-1);
+
+const StatusPill = ({ status }) => {
+  const map = {
+    PENDING: "bg-zinc-800 text-zinc-300 ring-zinc-700",
+    RUNNING: "bg-amber-500/10 text-amber-300 ring-amber-500/30",
+    DONE: "bg-emerald-500/10 text-emerald-300 ring-emerald-500/30",
+    ERROR: "bg-rose-500/10 text-rose-300 ring-rose-500/30",
+  };
   return (
-    <div className="w-full h-2 bg-zinc-800/80 rounded">
-      <div
-        className="h-full bg-emerald-500 rounded transition-all"
-        style={{ width: `${Math.max(0, Math.min(100, value))}%` }}
-      />
-    </div>
+    <span className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs ring-1 ${map[status] || "bg-zinc-800 text-zinc-300 ring-zinc-700"}`}>
+      <span className={`h-2 w-2 rounded-full ${status === "DONE" ? "bg-emerald-400" : status === "RUNNING" ? "bg-amber-400 animate-pulse" : status === "ERROR" ? "bg-rose-400" : "bg-zinc-400"}`} />
+      {status}
+    </span>
   );
-}
+};
 
-const LS_HISTORY_KEY = "readcast.jobs.v1";
-
-// ----- App -----
 export default function App() {
   const [file, setFile] = useState(null);
-  const [submitting, setSubmitting] = useState(false);
-  const [job, setJob] = useState(null); // {id,status, ...}
-  const [error, setError] = useState("");
+  const [job, setJob] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [errorMsg, setErrorMsg] = useState("");
   const [history, setHistory] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem(LS_HISTORY_KEY) || "[]");
-    } catch {
-      return [];
-    }
+    try { return JSON.parse(localStorage.getItem("readcast-history") || "[]"); } catch { return []; }
   });
 
-  // dérive un % de progression simple en fonction du statut
-  const progress = useMemo(() => {
-    if (!job) return 0;
-    const s = (job.status || "").toUpperCase();
-    if (s === "PENDING") return 5;
-    if (s === "RUNNING") return 60;
-    if (s === "DONE") return 100;
-    if (s === "ERROR") return 100;
-    return 10;
-  }, [job]);
+  const audioMp3Ref = useRef(null);
+  const audioM4bRef = useRef(null);
 
-  // persister l’historique (max 20)
-  useEffect(() => {
-    localStorage.setItem(LS_HISTORY_KEY, JSON.stringify(history.slice(0, 20)));
-  }, [history]);
+  useEffect(() => { localStorage.setItem("readcast-history", JSON.stringify(history.slice(0, 10))); }, [history]);
 
-  // polling du statut
+  // Simple polling of job status
   useEffect(() => {
     if (!job?.id) return;
-    if (["DONE", "ERROR"].includes(job.status)) return;
+    let stop = false;
 
-    const abort = new AbortController();
     const tick = async () => {
       try {
-        const r = await fetch(`${API_BASE}/api/jobs/${job.id}`, {
-          signal: abort.signal,
-        });
-        const data = await r.json();
-        setJob(data);
+        const r = await fetch(`${API_BASE}/api/jobs/${job.id}`);
+        if (!r.ok) throw new Error("Erreur serveur");
+        const json = await r.json();
+        setJob(json);
 
-        // push dans l’historique à la fin
-        if (["DONE", "ERROR"].includes(data.status)) {
+        // progress: fake a smooth progress while running (better UX than 0 or 100)
+        if (json.status === "RUNNING") {
+          setProgress((p) => (p < 88 ? Math.min(88, p + Math.random() * 8) : p));
+        } else if (json.status === "DONE") {
+          setProgress(100);
+          setBusy(false);
           setHistory((h) => [
-            {
-              id: data.id,
-              createdAt: Date.now(),
-              status: data.status,
-              input: data.input_filename,
-              mp3: data.output_mp3_url,
-              m4b: data.output_m4b_url,
-            },
-            ...h.filter((x) => x.id !== data.id),
+            { id: json.id, name: json.input_filename, ts: Date.now(), status: json.status, mp3: json.output_mp3_url, m4b: json.output_m4b_url },
+            ...h.filter((x) => x.id !== json.id),
           ]);
+        } else if (json.status === "ERROR") {
+          setBusy(false);
+          setErrorMsg(json.error || "Échec du traitement.");
         }
       } catch (e) {
-        // no-op si navigation
+        // ne bloque pas l’UI si un poll échoue
+      }
+      if (!stop && job?.status !== "DONE" && job?.status !== "ERROR") {
+        setTimeout(tick, 1400);
       }
     };
+    tick();
+    return () => { stop = true; };
+  }, [job?.id]);
 
-    const iv = setInterval(tick, 2500);
-    tick(); // premier coup
+  const canSubmit = useMemo(() => !!file && !busy, [file, busy]);
 
-    return () => {
-      clearInterval(iv);
-      abort.abort();
-    };
-  }, [job?.id, job?.status]);
+  const onChooseFile = (e) => {
+    const f = e.target.files?.[0];
+    setFile(f || null);
+    setErrorMsg("");
+    setProgress(0);
+    setJob(null);
+  };
 
-  const onSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
+  const submit = async () => {
+    if (!file) return;
+    setBusy(true);
+    setErrorMsg("");
+    setProgress(12);
 
-    if (!file) {
-      setError("Choisissez un PDF d’abord.");
-      return;
-    }
-    if (!API_BASE) {
-      setError("VITE_API_BASE est vide côté front.");
-      return;
-    }
+    const form = new FormData();
+    form.append("file", file);
 
     try {
-      setSubmitting(true);
-
-      const form = new FormData();
-      form.append("file", file); // backend: form field "file"
-      // (optionnel) voix/lang:
-      // form.append("voice_id", "Rachel");
-      // form.append("lang", "fra");
-
-      const r = await fetch(`${API_BASE}/api/jobs`, {
-        method: "POST",
-        body: form,
-      });
-
-      if (!r.ok) {
-        const t = await r.text();
-        throw new Error(`API ${r.status}: ${t}`);
-      }
-
-      const data = await r.json(); // {id,status,...}
-      setJob(data);
-
-      // insérer une entrée "en attente" dans l’historique
-      setHistory((h) => [
-        {
-          id: data.id,
-          createdAt: Date.now(),
-          status: data.status,
-          input: data.input_filename,
-          mp3: null,
-          m4b: null,
-        },
-        ...h,
-      ]);
+      const r = await fetch(`${API_BASE}/api/jobs`, { method: "POST", body: form });
+      if (!r.ok) throw new Error(await r.text());
+      const json = await r.json();
+      setJob(json);
+      setProgress(22);
     } catch (e) {
-      setError(e.message || "Échec de création de job");
-    } finally {
-      setSubmitting(false);
+      setBusy(false);
+      setErrorMsg(e.message || "Impossible de créer le job.");
     }
   };
 
-  const onPick = (e) => {
-    setFile(e.target.files?.[0] || null);
-  };
+  const clearHistory = () => setHistory([]);
 
-  const prettyStatus = (s) => {
-    if (!s) return "";
-    const x = s.toUpperCase();
-    if (x === "PENDING") return "En file d’attente…";
-    if (x === "RUNNING") return "Conversion en cours…";
-    if (x === "DONE") return "Terminé ✅";
-    if (x === "ERROR") return "Erreur ❗";
-    return x;
+  const forceDownload = (url, filename = undefined) => {
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename || "";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
   };
-
-  const canDownload = job && job.status === "DONE";
 
   return (
-    <div className="min-h-screen text-zinc-100 bg-black">
-      <div className="max-w-3xl mx-auto px-6 py-10">
-        {/* Header */}
-        <header className="mb-10">
-          <h1 className="text-3xl font-semibold">📖→🎧 Readcast</h1>
-          <p className="text-zinc-400 mt-2">
-            Transforme un PDF/scan manuscrit en audiobook.
-          </p>
-        </header>
-
-        {/* Upload / action */}
-        <section className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6 mb-8">
-          <form onSubmit={onSubmit} className="grid gap-4">
-            <div className="grid gap-2">
-              <label className="text-sm text-zinc-400">Fichier PDF</label>
-              <input
-                type="file"
-                accept="application/pdf"
-                onChange={onPick}
-                className="block w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded
-                           file:border-0 file:bg-emerald-600 file:text-white hover:file:bg-emerald-500
-                           file:cursor-pointer"
-              />
-              {file && (
-                <div className="text-xs text-zinc-400">
-                  {file.name} — {(file.size / (1024 * 1024)).toFixed(2)} MB
-                </div>
-              )}
+    <div className="min-h-screen bg-gradient-to-b from-zinc-950 via-zinc-950 to-zinc-900 text-zinc-100">
+      {/* Header */}
+      <header className="border-b border-white/5 backdrop-blur supports-[backdrop-filter]:bg-zinc-950/60 sticky top-0 z-50">
+        <div className="mx-auto max-w-6xl px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-emerald-500 to-cyan-500 ring-1 ring-white/10 grid place-content-center">
+              <span className="text-zinc-950 text-lg font-black">R</span>
             </div>
+            <div className="text-lg font-semibold tracking-tight">Readcast</div>
+            <span className="ml-3 text-xs text-zinc-400 hidden sm:inline">PDF → Audiobook (MP3/M4B)</span>
+          </div>
+          <a
+            className="text-xs text-zinc-400 hover:text-zinc-200 transition"
+            href={API_BASE || "#"}
+            target="_blank"
+            rel="noreferrer"
+          >
+            API: {API_BASE || "—"}
+          </a>
+        </div>
+      </header>
+
+      <main className="mx-auto max-w-6xl px-4 py-10 space-y-8">
+        {/* Upload Card */}
+        <section className="rounded-2xl border border-white/10 bg-white/5 p-6 shadow-[0_10px_30px_-15px_rgba(0,0,0,0.6)]">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-xl font-semibold">Convertir un PDF en audiobook</h2>
+              <p className="text-sm text-zinc-400 mt-1">Faites glisser votre PDF ou sélectionnez-le, puis lancez la conversion.</p>
+            </div>
+            <StatusPill status={job?.status || (busy ? "RUNNING" : file ? "PENDING" : "PENDING")} />
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-[1fr_auto]">
+            <label className="flex items-center gap-3 rounded-xl border border-white/10 bg-zinc-900/60 px-4 py-3 hover:bg-zinc-900/80 transition cursor-pointer">
+              <input type="file" accept="application/pdf" className="hidden" onChange={onChooseFile} />
+              <div className="flex-1">
+                <div className="text-sm">
+                  {file ? <span className="font-medium">{file.name}</span> : "Choisir un fichier PDF"}
+                </div>
+                <div className="text-xs text-zinc-400">
+                  {file ? prettyBytes(file.size || 0) : "Taille max limitée par votre navigateur"}
+                </div>
+              </div>
+              <div className="text-[10px] rounded-full bg-zinc-800 px-2.5 py-1 text-zinc-300 ring-1 ring-white/10">PDF</div>
+            </label>
 
             <button
-              type="submit"
-              disabled={!file || submitting}
-              className={cn(
-                "h-11 rounded-lg bg-emerald-600 hover:bg-emerald-500 transition disabled:opacity-50",
-                "font-medium"
-              )}
+              onClick={submit}
+              disabled={!canSubmit}
+              className={`rounded-xl px-6 py-3 text-sm font-medium transition shadow-inner ring-1 ring-white/10
+                ${canSubmit
+                  ? "bg-gradient-to-br from-emerald-500 to-cyan-500 text-zinc-950 hover:brightness-110"
+                  : "bg-zinc-800 text-zinc-400 cursor-not-allowed"}`}
             >
-              {submitting ? "Envoi…" : "Convertir en audiobook"}
+              {busy ? "Conversion en cours…" : "Convertir"}
             </button>
+          </div>
 
-            {error && (
-              <div className="text-sm text-red-400 border border-red-900/50 rounded p-3">
-                {error}
+          {/* Progress */}
+          {(busy || progress > 0) && (
+            <div className="mt-6">
+              <div className="flex items-center justify-between mb-2">
+                <div className="text-xs text-zinc-400">Progression</div>
+                <div className="text-xs text-zinc-300">{Math.round(progress)}%</div>
               </div>
-            )}
-          </form>
+              <div className="h-2 rounded-full bg-zinc-800 overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-emerald-500 via-cyan-500 to-emerald-500 animate-[progress_2s_ease_infinite]"
+                  style={{ width: `${Math.min(100, progress)}%` }}
+                />
+              </div>
+            </div>
+          )}
+
+          {errorMsg && (
+            <div className="mt-4 rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
+              {errorMsg}
+            </div>
+          )}
         </section>
 
-        {/* Suivi en temps réel */}
-        {job && (
-          <section className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6 mb-8">
-            <div className="flex items-center justify-between mb-3">
-              <div className="text-sm text-zinc-400">Job id</div>
-              <code className="text-xs text-zinc-300">{job.id}</code>
+        {/* Result Card */}
+        {job?.status === "DONE" && (
+          <section className="rounded-2xl border border-white/10 bg-white/5 p-6 shadow-[0_10px_30px_-15px_rgba(0,0,0,0.6)]">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="text-lg font-semibold">Résultat</h3>
+                <p className="text-sm text-zinc-400 mt-1">Job id : <span className="text-zinc-300">{job.id}</span></p>
+              </div>
+              <StatusPill status="DONE" />
             </div>
 
-            <div className="flex items-center justify-between mb-2">
-              <div className="font-medium">{prettyStatus(job.status)}</div>
-              <div className="text-sm text-zinc-400">
-                {progress < 100 ? `${progress}%` : ""}
+            <div className="grid gap-6 md:grid-cols-2">
+              {/* MP3 */}
+              <div className="rounded-xl border border-white/10 bg-zinc-900/60 p-4">
+                <div className="mb-3 flex items-center justify-between">
+                  <span className="text-sm font-medium">MP3</span>
+                  {job.output_mp3_url && (
+                    <button
+                      className="text-xs text-zinc-300 hover:text-white transition"
+                      onClick={() => forceDownload(job.output_mp3_url, "audiobook.mp3")}
+                    >
+                      Télécharger
+                    </button>
+                  )}
+                </div>
+                <audio
+                  ref={audioMp3Ref}
+                  controls
+                  src={job.output_mp3_url || undefined}
+                  className="w-full rounded-lg bg-zinc-800"
+                />
+              </div>
+
+              {/* M4B */}
+              <div className="rounded-xl border border-white/10 bg-zinc-900/60 p-4">
+                <div className="mb-3 flex items-center justify-between">
+                  <span className="text-sm font-medium">M4B</span>
+                  {job.output_m4b_url && (
+                    <button
+                      className="text-xs text-zinc-300 hover:text-white transition"
+                      onClick={() => forceDownload(job.output_m4b_url, "audiobook.m4b")}
+                    >
+                      Télécharger
+                    </button>
+                  )}
+                </div>
+                <audio
+                  ref={audioM4bRef}
+                  controls
+                  src={job.output_m4b_url || undefined}
+                  className="w-full rounded-lg bg-zinc-800"
+                />
               </div>
             </div>
-            <ProgressBar value={progress} />
-
-            {job.error && (
-              <div className="mt-3 text-sm text-red-400">{job.error}</div>
-            )}
-
-            {/* Résultats */}
-            {canDownload && (
-              <div className="mt-6 grid gap-6">
-                {/* MP3 */}
-                {job.output_mp3_url && (
-                  <div>
-                    <div className="mb-2 text-sm text-zinc-400">MP3</div>
-                    <audio
-                      controls
-                      src={job.output_mp3_url}
-                      className="w-full"
-                    />
-                    <div className="mt-2">
-                      <a
-                        href={job.output_mp3_url}
-                        download
-                        className="text-emerald-400 hover:underline"
-                      >
-                        Télécharger le MP3
-                      </a>
-                    </div>
-                  </div>
-                )}
-                {/* M4B */}
-                {job.output_m4b_url && (
-                  <div>
-                    <div className="mb-2 text-sm text-zinc-400">M4B</div>
-                    <audio
-                      controls
-                      src={job.output_m4b_url}
-                      className="w-full"
-                    />
-                    <div className="mt-2">
-                      <a
-                        href={job.output_m4b_url}
-                        download
-                        className="text-emerald-400 hover:underline"
-                      >
-                        Télécharger le M4B
-                      </a>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
           </section>
         )}
 
-        {/* Historique local */}
-        <section className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-medium">Historique</h2>
+        {/* History */}
+        <section className="rounded-2xl border border-white/10 bg-white/5 p-6 shadow-[0_10px_30px_-15px_rgba(0,0,0,0.6)]">
+          <div className="mb-6 flex items-center justify-between">
+            <h3 className="text-lg font-semibold">Historique</h3>
             {history.length > 0 && (
-              <button
-                onClick={() => setHistory([])}
-                className="text-xs text-zinc-400 hover:text-zinc-200"
-              >
+              <button onClick={clearHistory} className="text-xs text-zinc-300 hover:text-white transition">
                 Vider
               </button>
             )}
           </div>
 
           {history.length === 0 ? (
-            <div className="text-sm text-zinc-500">
-              Aucune conversion pour le moment.
-            </div>
+            <p className="text-sm text-zinc-400">Aucun élément pour le moment.</p>
           ) : (
             <ul className="grid gap-3">
               {history.map((h) => (
-                <li
-                  key={h.id}
-                  className="rounded-lg border border-zinc-800 p-3 text-sm"
-                >
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="truncate">
-                      <div className="text-zinc-200 truncate">{h.input}</div>
-                      <div className="text-xs text-zinc-500">
-                        {new Date(h.createdAt).toLocaleString()} — {h.id}
+                <li key={h.id} className="rounded-xl border border-white/10 bg-zinc-900/60 px-4 py-3">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-medium">{h.name}</div>
+                      <div className="text-xs text-zinc-400">
+                        {new Date(h.ts).toLocaleString()} — {h.id}
                       </div>
                     </div>
-                    <div
-                      className={cn(
-                        "px-2 py-0.5 rounded text-xs",
-                        h.status === "DONE" &&
-                          "bg-emerald-500/20 text-emerald-300 border border-emerald-700/40",
-                        h.status === "ERROR" &&
-                          "bg-red-500/20 text-red-300 border border-red-700/40",
-                        h.status !== "DONE" &&
-                          h.status !== "ERROR" &&
-                          "bg-zinc-700/30 text-zinc-300 border border-zinc-700/50"
+                    <div className="flex items-center gap-2">
+                      <StatusPill status={h.status} />
+                      {h.mp3 && (
+                        <a
+                          href={h.mp3}
+                          download
+                          className="rounded-full border border-white/10 bg-zinc-800 px-3 py-1 text-xs text-zinc-300 hover:bg-zinc-700 transition"
+                        >
+                          MP3
+                        </a>
                       )}
-                    >
-                      {h.status}
+                      {h.m4b && (
+                        <a
+                          href={h.m4b}
+                          download
+                          className="rounded-full border border-white/10 bg-zinc-800 px-3 py-1 text-xs text-zinc-300 hover:bg-zinc-700 transition"
+                        >
+                          M4B
+                        </a>
+                      )}
                     </div>
-                  </div>
-
-                  <div className="mt-2 flex gap-4">
-                    {h.mp3 && (
-                      <a
-                        href={h.mp3}
-                        download
-                        className="text-emerald-400 hover:underline"
-                      >
-                        MP3
-                      </a>
-                    )}
-                    {h.m4b && (
-                      <a
-                        href={h.m4b}
-                        download
-                        className="text-emerald-400 hover:underline"
-                      >
-                        M4B
-                      </a>
-                    )}
                   </div>
                 </li>
               ))}
@@ -353,11 +310,10 @@ export default function App() {
           )}
         </section>
 
-        {/* Footer */}
-        <footer className="text-xs text-zinc-500 mt-8">
-          API: <code>{API_BASE || "non configurée"}</code>
+        <footer className="py-6 text-center text-xs text-zinc-500">
+          © {new Date().getFullYear()} Readcast — made for PDFs you’ll actually listen to.
         </footer>
-      </div>
+      </main>
     </div>
   );
 }
