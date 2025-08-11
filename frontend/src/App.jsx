@@ -1,334 +1,283 @@
-import { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import UploadCard from "./components/UploadCard";
+import VoicePicker from "./components/VoicePicker";
+import ProgressBar from "./components/ProgressBar";
+import AudioResult from "./components/AudioResult";
+import History from "./components/History";
+import { createJob, getJob } from "./utils/api";
 
-const API_BASE = (import.meta.env.VITE_API_BASE || "").replace(/\/$/, "");
+const TABS = [
+  { key: "all", label: "Tous" },
+  { key: "running", label: "En cours" },
+  { key: "done", label: "Terminés" },
+];
 
-const cx = (...c) => c.filter(Boolean).join(" ");
+// NOTE: à mapper plus tard sur des “vraies” voices côté backend
+const VOICES = [
+  {
+    id: "Rachel",
+    name: "Rachel",
+    subtitle: "Féminine • Chaleureuse",
+  },
+  // exemples visuels (peuvent aussi pointer sur Rachel en attendant)
+  { id: "Rachel", name: "Emma", subtitle: "Féminine • Narrative" },
+  { id: "Rachel", name: "Thomas", subtitle: "Masculine • Professionnelle" },
+  { id: "Rachel", name: "Antoine", subtitle: "Masculine • Dramatique" },
+];
 
-/* ===== Upload (drag & drop) ===== */
-function Uploader({ onPick, busy }) {
-  const [file, setFile] = useState(null);
-  const [over, setOver] = useState(false);
-  const inputRef = useRef(null);
-
-  function onDrop(e) {
-    e.preventDefault();
-    setOver(false);
-    const f = e.dataTransfer.files?.[0];
-    if (f) setFile(f);
-  }
-  async function submit() {
-    if (!file || busy) return;
-    await onPick(file);
-    setFile(null);
-    if (inputRef.current) inputRef.current.value = "";
-  }
-
-  return (
-    <section
-      onDragOver={(e) => {
-        e.preventDefault();
-        setOver(true);
-      }}
-      onDragLeave={() => setOver(false)}
-      onDrop={onDrop}
-      className={cx(
-        "rounded-2xl border bg-white/[0.04] backdrop-blur",
-        "border-white/10 p-8 sm:p-10 transition-all",
-        over && "ring-2 ring-indigo-400/60 border-indigo-400/40"
-      )}
-    >
-      <h2 className="text-xl sm:text-2xl font-semibold tracking-tight">
-        Dépose ton PDF
-      </h2>
-      <p className="mt-2 text-sm text-white/65">
-        Glisse-dépose ou choisis un fichier. Nous générons un audiolivre MP3 & M4B.
-      </p>
-
-      <div
-        className={cx(
-          "mt-6 rounded-xl border border-dashed border-white/15 bg-white/5",
-          "hover:bg-white/10"
-        )}
-      >
-        <label className="flex flex-col sm:flex-row items-center gap-4 p-5 sm:p-6 cursor-pointer">
-          <div className="flex-1 min-w-0">
-            <div className="text-sm text-white/70">Fichier</div>
-            <div className="truncate text-base">
-              {file ? file.name : "Aucun fichier sélectionné"}
-            </div>
-            <div className="mt-1 text-xs text-white/50">PDF jusqu’à 100 MB</div>
-          </div>
-
-          <div className="flex items-center gap-3 w-full sm:w-auto">
-            <input
-              ref={inputRef}
-              type="file"
-              accept="application/pdf"
-              onChange={(e) => setFile(e.target.files?.[0] || null)}
-              className="hidden"
-            />
-            <button
-              type="button"
-              onClick={() => inputRef.current?.click()}
-              className="w-full sm:w-auto rounded-lg px-4 py-2 text-sm font-medium bg-white/10 hover:bg-white/20"
-            >
-              Choisir un fichier
-            </button>
-            <button
-              type="button"
-              onClick={submit}
-              disabled={!file || busy}
-              className={cx(
-                "w-full sm:w-auto rounded-lg px-4 py-2 text-sm font-semibold",
-                "bg-gradient-to-br from-indigo-500 to-violet-500 shadow-indigo-500/30",
-                "hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
-              )}
-            >
-              {busy ? "Envoi…" : "Convertir"}
-            </button>
-          </div>
-        </label>
-      </div>
-
-      <p className="mt-3 text-xs text-white/55">Formats de sortie : MP3 & M4B</p>
-    </section>
-  );
-}
-
-/* ===== Progress ===== */
-function Progress({ value, note }) {
-  return (
-    <section className="rounded-2xl border border-white/10 bg-white/[0.04] p-6">
-      <div className="flex items-center justify-between">
-        <h3 className="font-medium">Conversion en cours…</h3>
-        <span className="text-sm text-white/70">{note}</span>
-      </div>
-      <div className="mt-4 h-3 w-full rounded-full bg-white/10 overflow-hidden">
-        <div
-          className="h-full bg-gradient-to-r from-indigo-500 via-fuchsia-500 to-teal-400 transition-[width] duration-300"
-          style={{ width: `${value}%` }}
-        />
-      </div>
-      <div className="mt-2 text-right text-xs text-white/60">{value}%</div>
-    </section>
-  );
-}
-
-/* ===== Result ===== */
-function Result({ job }) {
-  if (!job) return null;
-  const done = job.status === "DONE";
-  const erro = job.status === "ERROR";
-
-  return (
-    <section className="rounded-2xl border border-white/10 bg-white/[0.04] p-6">
-      <div className="flex items-center justify-between">
-        <h3 className="font-medium">Résultat</h3>
-        <span
-          className={cx(
-            "px-2.5 py-1 rounded-full text-xs font-medium",
-            done && "bg-emerald-500/15 text-emerald-300 border border-emerald-500/30",
-            erro && "bg-rose-500/15 text-rose-300 border border-rose-500/30",
-            !done && !erro && "bg-white/10 text-white/70 border border-white/15"
-          )}
-        >
-          {done ? "Terminé" : erro ? "Erreur" : "En cours…"}
-        </span>
-      </div>
-
-      <div className="mt-5 grid gap-5 sm:grid-cols-2">
-        <FormatCard label="MP3" url={job.output_mp3_url} ready={done} />
-        <FormatCard label="M4B" url={job.output_m4b_url} ready={done} />
-      </div>
-    </section>
-  );
-}
-
-function FormatCard({ label, url, ready }) {
-  return (
-    <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-      <div className="flex items-center justify-between">
-        <div className="font-medium">{label}</div>
-        <a
-          href={ready && url ? url : "#"}
-          download
-          target="_blank"
-          rel="noreferrer"
-          className={cx(
-            "text-xs px-3 py-1.5 rounded-lg font-medium bg-white/10 hover:bg-white/20",
-            (!ready || !url) && "pointer-events-none opacity-50"
-          )}
-        >
-          Télécharger
-        </a>
-      </div>
-      <audio className="mt-3 w-full" controls src={ready ? url : undefined} />
-    </div>
-  );
-}
-
-/* ===== History (compact) ===== */
-function History({ items, onClear }) {
-  if (!items?.length) return null;
-  return (
-    <section className="rounded-2xl border border-white/10 bg-white/[0.04] p-6">
-      <div className="flex items-center justify-between">
-        <h3 className="font-medium">Historique</h3>
-        <button
-          onClick={onClear}
-          className="text-xs px-3 py-1.5 rounded-lg font-medium bg-white/10 hover:bg-white/20"
-        >
-          Vider
-        </button>
-      </div>
-
-      <ul className="mt-4 space-y-3">
-        {items.map((it) => (
-          <li key={it.id} className="rounded-lg border border-white/10 bg-white/5 p-3">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="min-w-0">
-                <div className="truncate font-medium">{it.filename}</div>
-                <div className="text-xs text-white/60">
-                  {new Date(it.created_at).toLocaleString()}
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                {it.output_mp3_url && (
-                  <a
-                    href={it.output_mp3_url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-xs px-2.5 py-1.5 rounded-md bg-white/10 hover:bg-white/20"
-                  >
-                    MP3
-                  </a>
-                )}
-                {it.output_m4b_url && (
-                  <a
-                    href={it.output_m4b_url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-xs px-2.5 py-1.5 rounded-md bg-white/10 hover:bg-white/20"
-                  >
-                    M4B
-                  </a>
-                )}
-              </div>
-            </div>
-          </li>
-        ))}
-      </ul>
-    </section>
-  );
-}
-
-/* ===== Small store for history ===== */
-const HKEY = "readcast:history";
-const getHistory = () => {
-  try {
-    return JSON.parse(localStorage.getItem(HKEY) || "[]");
-  } catch {
-    return [];
-  }
-};
-const addHistory = (entry) => {
-  const cur = getHistory();
-  const next = [entry, ...cur].slice(0, 20);
-  localStorage.setItem(HKEY, JSON.stringify(next));
-  return next;
-};
-
-/* ===== App ===== */
 export default function App() {
-  const [busy, setBusy] = useState(false);
-  const [job, setJob] = useState(null);
-  const [progress, setProgress] = useState(0);
-  const [note, setNote] = useState("Préparation…");
-  const [history, setHistory] = useState(getHistory());
+  const [selectedVoice, setSelectedVoice] = useState(VOICES[0]);
+  const [file, setFile] = useState(null);
 
-  // poll until done
+  const [job, setJob] = useState(null); // { id, status, mp3, m4b, error, filename }
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const [history, setHistory] = useState(() => {
+    try {
+      const raw = localStorage.getItem("readcast_history");
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const [activeTab, setActiveTab] = useState("all");
+
+  // Persiste l'historique
+  useEffect(() => {
+    localStorage.setItem("readcast_history", JSON.stringify(history));
+  }, [history]);
+
+  const onDropFile = useCallback((f) => setFile(f), []);
+
+  // Submit job
+  const onConvert = useCallback(async () => {
+    if (!file || isSubmitting) return;
+    setIsSubmitting(true);
+    setJob(null);
+
+    try {
+      const created = await createJob(file, selectedVoice?.id || "Rachel");
+      // created { id, status, ... }
+      const newJob = {
+        id: created.id,
+        status: created.status,
+        filename: created.input_filename,
+        createdAt: new Date().toISOString(),
+        mp3: created.output_mp3_url || null,
+        m4b: created.output_m4b_url || null,
+        error: created.error || null,
+      };
+      setJob(newJob);
+      setHistory((prev) => [newJob, ...prev]);
+    } catch (e) {
+      alert("Erreur lors de la création du job.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [file, isSubmitting, selectedVoice]);
+
+  // Polling du job courant tant que pas DONE/ERROR
   useEffect(() => {
     if (!job?.id) return;
-    if (job.status === "DONE" || job.status === "ERROR") return;
 
-    const iv = setInterval(async () => {
+    let cancel = false;
+    const tick = async () => {
       try {
-        const r = await fetch(`${API_BASE}/api/jobs/${job.id}`);
-        const data = await r.json();
-        setJob(data);
-        setProgress((p) => (data.status === "DONE" ? 100 : Math.min(p + 3, 92)));
-        setNote(data.status === "DONE" ? "Terminé" : "Traitement…");
-      } catch (e) {
-        console.error(e);
+        const fresh = await getJob(job.id);
+        if (cancel) return;
+
+        const updated = {
+          id: fresh.id,
+          status: fresh.status,
+          filename: fresh.input_filename,
+          createdAt: job.createdAt,
+          mp3: fresh.output_mp3_url || null,
+          m4b: fresh.output_m4b_url || null,
+          error: fresh.error || null,
+        };
+        setJob(updated);
+
+        // maj historique
+        setHistory((prev) =>
+          prev.map((j) => (j.id === updated.id ? updated : j))
+        );
+
+        if (fresh.status === "RUNNING" || fresh.status === "PENDING") {
+          setTimeout(tick, 1500);
+        }
+      } catch {
+        setTimeout(tick, 1500);
       }
-    }, 2000);
-    return () => clearInterval(iv);
+    };
+    tick();
+
+    return () => {
+      cancel = true;
+    };
   }, [job?.id]);
 
-  // on completion → history
-  useEffect(() => {
-    if (!job || (job.status !== "DONE" && job.status !== "ERROR")) return;
-    const entry = {
-      id: job.id,
-      filename: job.input_filename,
-      created_at: Date.now(),
-      output_mp3_url: job.output_mp3_url,
-      output_m4b_url: job.output_m4b_url,
-    };
-    setHistory(addHistory(entry));
-    setBusy(false);
-    setProgress(100);
-    setNote("Terminé");
-  }, [job?.status]);
+  const filteredHistory = useMemo(() => {
+    if (activeTab === "running")
+      return history.filter((h) => h.status !== "DONE" && !h.error);
+    if (activeTab === "done") return history.filter((h) => h.status === "DONE");
+    return history;
+  }, [activeTab, history]);
 
-  async function start(file) {
-    setBusy(true);
-    setProgress(10);
-    setNote("Envoi du fichier…");
-
-    const fd = new FormData();
-    fd.append("file", file);
-    const r = await fetch(`${API_BASE}/api/jobs`, { method: "POST", body: fd });
-    const data = await r.json();
-    setJob(data);
-    setProgress(25);
-    setNote("Conversion…");
-  }
-
-  function clearHistory() {
-    localStorage.removeItem(HKEY);
-    setHistory([]);
-  }
+  const progress = useMemo(() => {
+    if (!job) return 0;
+    if (job.status === "PENDING") return 10;
+    if (job.status === "RUNNING") return 60; // approx
+    if (job.status === "DONE") return 100;
+    return 0;
+  }, [job]);
 
   return (
-    <div className="min-h-dvh text-white bg-[#0B0B10]">
-      {/* soft background blobs */}
-      <div className="pointer-events-none fixed inset-0 -z-10">
-        <div className="absolute -top-32 left-[-8rem] h-80 w-80 rounded-full bg-indigo-600/20 blur-3xl" />
-        <div className="absolute -bottom-32 right-[-8rem] h-80 w-80 rounded-full bg-fuchsia-600/20 blur-3xl" />
-      </div>
+    <div className="min-h-screen bg-neutral-950 text-neutral-100">
+      {/* Header */}
+      <header className="sticky top-0 z-30 backdrop-blur bg-neutral-950/60 border-b border-white/10">
+        <div className="max-w-6xl mx-auto px-5 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 p-2 shadow-lg shadow-blue-500/20">
+              <svg
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                className="text-white"
+              >
+                <path
+                  d="M12 3l7 4v10l-7 4-7-4V7l7-4z"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                />
+              </svg>
+            </div>
+            <span className="font-semibold text-lg tracking-tight">
+              Readcast
+            </span>
+            <span className="ml-3 px-2 py-0.5 text-xs rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+              Beta
+            </span>
+          </div>
 
-      <header className="mx-auto max-w-4xl px-6 pt-10">
-        <div className="flex items-center justify-between">
-          <div className="text-xl font-semibold">Readcast</div>
+          <div className="hidden sm:flex items-center gap-6 text-sm">
+            <a
+              href="#"
+              className="text-white/60 hover:text-white transition-colors"
+              onClick={(e) => e.preventDefault()}
+            >
+              Docs API
+            </a>
+            <div className="px-2.5 py-1 rounded-lg border border-white/10 bg-white/5 text-xs">
+              API: {import.meta.env.VITE_API_BASE?.replace(/^https?:\/\//, "")}
+            </div>
+          </div>
         </div>
-        <h1 className="mt-6 text-3xl sm:text-4xl font-semibold tracking-tight">
-          PDF → Audiobook, en quelques secondes
-        </h1>
-        <p className="mt-3 max-w-2xl text-white/70 leading-relaxed">
-          Dépose un PDF — nous te rendons un MP3 et un M4B prêts à écouter. Parfait pour
-          notes, scans et ebooks.
-        </p>
       </header>
 
-      <main className="mx-auto max-w-4xl px-6 pb-20 pt-8 space-y-8">
-        <Uploader onPick={start} busy={busy} />
-        {job && job.status !== "DONE" && job.status !== "ERROR" && (
-          <Progress value={progress} note={note} />
-        )}
-        {job && <Result job={job} />}
-        <History items={history} onClear={clearHistory} />
-      </main>
+      {/* Hero */}
+      <section className="max-w-6xl mx-auto px-5 pt-10">
+        <h1 className="text-3xl md:text-4xl font-semibold tracking-tight">
+          PDF →{" "}
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-400 to-fuchsia-400">
+            Audiobook
+          </span>
+          , en quelques secondes
+        </h1>
+        <p className="mt-2 text-white/60 max-w-2xl">
+          Dépose ton PDF, choisis une voix, et on te rend un MP3/M4B propre et
+          prêt à écouter. Idéal pour manuscrits, notes, ebooks, scans.
+        </p>
+      </section>
+
+      {/* Upload + Voix */}
+      <section className="max-w-6xl mx-auto px-5 mt-8 grid md:grid-cols-2 gap-6">
+        <UploadCard
+          file={file}
+          onDrop={onDropFile}
+          onConvert={onConvert}
+          isSubmitting={isSubmitting}
+        />
+
+        <VoicePicker
+          voices={VOICES}
+          selected={selectedVoice}
+          onSelect={setSelectedVoice}
+        />
+      </section>
+
+      {/* Résultat en direct */}
+      <section className="max-w-6xl mx-auto px-5 mt-8">
+        <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-medium">Résultat</h2>
+            {!!job?.status && (
+              <span
+                className={`text-xs px-2 py-1 rounded-md border ${
+                  job.status === "DONE"
+                    ? "bg-emerald-500/10 text-emerald-300 border-emerald-500/30"
+                    : job.error
+                    ? "bg-rose-500/10 text-rose-300 border-rose-500/30"
+                    : "bg-amber-500/10 text-amber-300 border-amber-500/30"
+                }`}
+              >
+                {job.error
+                  ? "ERREUR"
+                  : job.status === "DONE"
+                  ? "TERMINÉ"
+                  : job.status}
+              </span>
+            )}
+          </div>
+
+          {!job && <div className="text-white/50">Aucun job en cours.</div>}
+
+          {!!job && job.status !== "DONE" && !job.error && (
+            <ProgressBar value={progress} />
+          )}
+
+          {!!job && job.error && (
+            <div className="text-rose-300 text-sm leading-relaxed whitespace-pre-wrap bg-rose-500/5 border border-rose-500/30 rounded-xl p-3">
+              {job.error}
+            </div>
+          )}
+
+          {!!job && job.status === "DONE" && (
+            <AudioResult job={job} className="mt-4" />
+          )}
+        </div>
+      </section>
+
+      {/* Historique */}
+      <section className="max-w-6xl mx-auto px-5 mt-10 pb-16">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-medium">Historique</h2>
+          <div className="flex gap-2">
+            {TABS.map((t) => (
+              <button
+                key={t.key}
+                onClick={() => setActiveTab(t.key)}
+                className={`text-sm px-3 py-1.5 rounded-lg border transition ${
+                  activeTab === t.key
+                    ? "bg-white text-neutral-900 border-white"
+                    : "border-white/10 text-white/70 hover:bg-white/10"
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <History
+          items={filteredHistory}
+          onClear={() => setHistory([])}
+          onRemove={(id) =>
+            setHistory((prev) => prev.filter((j) => j.id !== id))
+          }
+        />
+      </section>
     </div>
   );
 }
