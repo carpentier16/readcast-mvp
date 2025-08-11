@@ -1,46 +1,38 @@
-# backend/settings.py
-
 from __future__ import annotations
 
 import os
 from typing import List, Optional
 
-from pydantic import field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import Field, field_validator
+from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    # Pydantic v2 config (lit .env / .env.production / .env.local si présents)
-    model_config = SettingsConfigDict(
-        env_file=(".env", ".env.production", ".env.local"),
-        env_file_encoding="utf-8",
-        extra="ignore",
-    )
-
-    # --- App ---
+    # General
     ENV: str = "dev"
     API_BASE_URL: str = "http://localhost:8000"
     SECRET_KEY: str = "change-me"
 
-    # --- Storage ---
-    STORAGE_MODE: str = "local"        # "local" ou "s3"
-    LOCAL_STORAGE_PATH: str = "./data"  # dossier de travail/outputs en local
+    # Storage
+    STORAGE_MODE: str = "local"  # "local" or "s3"
+    LOCAL_STORAGE_PATH: str = "./data"
 
-    # --- S3 / Backblaze ---
+    # S3 / Backblaze (S3-compatible)
     S3_ENDPOINT_URL: Optional[str] = None
     S3_BUCKET: Optional[str] = None
     AWS_ACCESS_KEY_ID: Optional[str] = None
     AWS_SECRET_ACCESS_KEY: Optional[str] = None
     AWS_REGION: Optional[str] = None
 
-    # --- Queue / DB ---
+    # Redis / RQ
     REDIS_URL: str = "redis://localhost:6379"
     RQ_QUEUE_NAME: str = "mvp_jobs"
 
+    # Database
     DATABASE_URL: str = "sqlite:///./mvp.db"
 
-    # --- TTS provider (par défaut ElevenLabs) ---
-    TTS_PROVIDER: str = "elevenlabs"
+    # TTS providers
+    TTS_PROVIDER: str = "elevenlabs"  # "elevenlabs" or "azure"
     ELEVENLABS_API_KEY: Optional[str] = None
     ELEVENLABS_VOICE_ID: str = "Rachel"
 
@@ -49,27 +41,41 @@ class Settings(BaseSettings):
 
     OPENAI_API_KEY: Optional[str] = None
 
-    # Optionnel: si tu seras amené à servir via CDN
+    # Public CDN base (if you proxy S3 links)
     PUBLIC_CDN_BASE: Optional[str] = None
 
     # --- CORS ---
-    # Accepte soit une liste JSON/py, soit une string "url1,url2"
-    CORS_ORIGINS: List[str] = ["*"]
+    # Accept either a JSON list (["https://foo"]) OR a comma-separated string ("https://foo, https://bar")
+    CORS_ORIGINS: List[str] = Field(default_factory=list)
+    # If you want to allow all *.vercel.app previews, set this to r"https://.*\.vercel\.app"
+    CORS_ORIGIN_REGEX: Optional[str] = None
 
     @field_validator("CORS_ORIGINS", mode="before")
     @classmethod
-    def _split_cors(cls, v):
-        if v is None:
-            return ["*"]
+    def _coerce_cors_origins(cls, v):
+        """
+        Allow:
+          - list: ['https://a', 'https://b']
+          - comma string: 'https://a, https://b'
+          - single string: 'https://a'
+        Normalize to a list[str] without empty items.
+        """
+        if v is None or v == "":
+            return []
+        if isinstance(v, list):
+            return [s.strip() for s in v if s and s.strip()]
         if isinstance(v, str):
-            v = v.strip()
-            if not v:
-                return ["*"]
-            return [s.strip() for s in v.split(",")]
+            # If it looks like a JSON list, pydantic would already parse it,
+            # but if someone passed a plain string, split by comma.
+            parts = [p.strip() for p in v.split(",")]
+            return [p for p in parts if p]
         return v
+
+    class Config:
+        env_file = ".env"
 
 
 settings = Settings()
 
-# S’assure que le dossier local existe (utile en mode Docker/Render)
+# Ensure local storage directory exists
 os.makedirs(settings.LOCAL_STORAGE_PATH, exist_ok=True)
