@@ -1,169 +1,91 @@
-import { useRef, useState, useEffect } from "react";
+import { Routes, Route, NavLink } from "react-router-dom";
+import { motion } from "framer-motion";
+import { BookAudio, Clock, Settings, Upload, Layers } from "lucide-react";
 
-const API_BASE = import.meta.env.VITE_API_BASE; // ex: https://audiobook-api-xbmz.onrender.com
+// Pages (je t’enverrai leurs fichiers ensuite)
+import Convert from "./pages/Convert.jsx";
+import History from "./pages/History.jsx";
+import SettingsPage from "./pages/Settings.jsx";
 
 export default function App() {
-  const fileRef = useRef(null);
-  const [jobId, setJobId] = useState("");
-  const [status, setStatus] = useState("");
-  const [mp3, setMp3] = useState("");
-  const [m4b, setM4b] = useState("");
-  const [downloadMp3, setDownloadMp3] = useState("");
-  const [downloadM4b, setDownloadM4b] = useState("");
-  const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-
-  async function startJob(e) {
-    e.preventDefault();
-    setError("");
-    setStatus("");
-    setMp3("");
-    setM4b("");
-    setDownloadMp3("");
-    setDownloadM4b("");
-    setJobId("");
-    setIsLoading(true);
-
-    const file = fileRef.current?.files?.[0];
-    if (!file) {
-      setError("Choisis un PDF");
-      setIsLoading(false);
-      return;
-    }
-
-    try {
-      const form = new FormData();
-      form.append("file", file);
-      // Optionnel : voice/lang
-      // form.append("voice", "Rachel");
-      // form.append("lang", "fra");
-
-      const r = await fetch(`${API_BASE}/api/jobs`, { method: "POST", body: form });
-      const data = await r.json();
-      if (!r.ok) throw new Error(data.detail || "Échec création job");
-
-      setJobId(data.id);
-      setStatus(data.status);
-      setIsLoading(false);
-    } catch (e) {
-      setError(String(e));
-      setIsLoading(false);
-    }
-  }
-
-  // Temps réel via SSE (fallback polling)
-  useEffect(() => {
-    if (!jobId) return;
-
-    let closed = false;
-
-    if ("EventSource" in window) {
-      const es = new EventSource(`${API_BASE}/api/jobs/${jobId}/events`);
-      es.onmessage = (ev) => {
-        try {
-          const data = JSON.parse(ev.data);
-          if (data.error) setError(data.error);
-          if (data.status) setStatus(data.status);
-          if (data.output_mp3_url) setMp3(data.output_mp3_url);
-          if (data.output_m4b_url) setM4b(data.output_m4b_url);
-          if (data.download_mp3_url) setDownloadMp3(data.download_mp3_url);
-          if (data.download_m4b_url) setDownloadM4b(data.download_m4b_url);
-          if (data.status === "DONE" || data.status === "ERROR") {
-            es.close();
-          }
-        } catch (e) {
-          console.error(e);
-        }
-      };
-      es.onerror = () => {
-        es.close();
-        if (!closed) startPolling();
-      };
-      return () => {
-        closed = true;
-        es.close();
-      };
-    } else {
-      startPolling();
-      return () => stopPolling();
-    }
-
-    function startPolling() {
-      stopPolling();
-      window.__poll = setInterval(async () => {
-        try {
-          const r = await fetch(`${API_BASE}/api/jobs/${jobId}`);
-          const data = await r.json();
-          if (data.error) setError(data.error);
-          if (data.status) setStatus(data.status);
-          if (data.output_mp3_url) setMp3(data.output_mp3_url);
-          if (data.output_m4b_url) setM4b(data.output_m4b_url);
-          if (data.download_mp3_url) setDownloadMp3(data.download_mp3_url);
-          if (data.download_m4b_url) setDownloadM4b(data.download_m4b_url);
-          if (data.status === "DONE" || data.status === "ERROR") stopPolling();
-        } catch (e) {
-          console.error(e);
-          stopPolling();
-        }
-      }, 3000);
-    }
-    function stopPolling() {
-      if (window.__poll) {
-        clearInterval(window.__poll);
-        window.__poll = null;
-      }
-    }
-  }, [jobId]);
-
   return (
-    <div style={{ maxWidth: 760, margin: "40px auto", fontFamily: "Inter, system-ui, sans-serif", padding: "0 16px" }}>
-      <h1 style={{ marginBottom: 8 }}>📖→🎧 Readcast</h1>
-      <p style={{ color: "#666", marginTop: 0 }}>Transforme un PDF/scan manuscrit en audiobook (MVP).</p>
-
-      <form onSubmit={startJob} style={{ display: "grid", gap: 12, marginTop: 16 }}>
-        <input type="file" accept="application/pdf" ref={fileRef} />
-        <button type="submit" disabled={isLoading} style={{ padding: "10px 14px" }}>
-          {isLoading ? "Traitement…" : "Convertir en audiobook"}
-        </button>
-      </form>
-
-      {jobId && (
-        <div style={{ marginTop: 16 }}>
-          <div>Job id&nbsp;: <code>{jobId}</code></div>
-          <div>Statut&nbsp;: <strong>{status}</strong></div>
-        </div>
-      )}
-
-      {error && (
-        <pre style={{ marginTop: 16, background: "#fee", padding: 12, whiteSpace: "pre-wrap", border: "1px solid #fbb" }}>
-          {error}
-        </pre>
-      )}
-
-      {mp3 && (
-        <div style={{ marginTop: 24 }}>
-          <h3>MP3</h3>
-          <audio controls src={mp3} style={{ width: "100%" }} />
-          <div style={{ marginTop: 8 }}>
-            <a href={downloadMp3 || mp3} download target="_blank" rel="noreferrer">
-              Télécharger MP3
-            </a>
+    <div className="min-h-screen grid md:grid-cols-[240px_1fr]">
+      {/* Sidebar */}
+      <aside className="hidden md:flex flex-col gap-4 p-4 border-r border-slate-200 bg-white/80 backdrop-blur">
+        <div className="flex items-center gap-2 p-3">
+          <div className="h-9 w-9 rounded-xl bg-brand-600 text-white grid place-items-center">
+            <BookAudio size={20} />
+          </div>
+          <div>
+            <div className="font-semibold leading-5">Readcast</div>
+            <div className="text-xs text-slate-500">PDF → Audiobook</div>
           </div>
         </div>
-      )}
 
-      {m4b && (
-        <div style={{ marginTop: 24 }}>
-          <h3>M4B</h3>
-          <audio controls src={m4b} style={{ width: "100%" }} />
-          <div style={{ marginTop: 8 }}>
-            <a href={downloadM4b || m4b} download target="_blank" rel="noreferrer">
-              Télécharger M4B
-            </a>
+        <nav className="flex-1">
+          <ul className="space-y-2">
+            <li>
+              <NavLink
+                to="/"
+                end
+                className={({ isActive }) =>
+                  `flex items-center gap-2 px-3 py-2 rounded-xl ${
+                    isActive ? "bg-brand-50 text-brand-700" : "hover:bg-slate-100"
+                  }`
+                }
+              >
+                <Upload size={18} /> Convertir
+              </NavLink>
+            </li>
+            <li>
+              <NavLink
+                to="/history"
+                className={({ isActive }) =>
+                  `flex items-center gap-2 px-3 py-2 rounded-xl ${
+                    isActive ? "bg-brand-50 text-brand-700" : "hover:bg-slate-100"
+                  }`
+                }
+              >
+                <Clock size={18} /> Historique
+              </NavLink>
+            </li>
+            <li>
+              <NavLink
+                to="/settings"
+                className={({ isActive }) =>
+                  `flex items-center gap-2 px-3 py-2 rounded-xl ${
+                    isActive ? "bg-brand-50 text-brand-700" : "hover:bg-slate-100"
+                  }`
+                }
+              >
+                <Settings size={18} /> Paramètres
+              </NavLink>
+            </li>
+          </ul>
+        </nav>
+
+        <div className="p-3 text-xs text-slate-500">
+          <div className="flex items-center gap-2">
+            <Layers size={14} /> MVP
           </div>
+          <div>v0.2.0</div>
         </div>
-      )}
+      </aside>
+
+      {/* Main */}
+      <main className="p-4 md:p-8">
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          <Routes>
+            <Route path="/" element={<Convert />} />
+            <Route path="/history" element={<History />} />
+            <Route path="/settings" element={<SettingsPage />} />
+          </Routes>
+        </motion.div>
+      </main>
     </div>
   );
 }
-
