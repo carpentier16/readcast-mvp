@@ -8,6 +8,8 @@ export default function App() {
   const [status, setStatus] = useState("");
   const [mp3, setMp3] = useState("");
   const [m4b, setM4b] = useState("");
+  const [downloadMp3, setDownloadMp3] = useState("");
+  const [downloadM4b, setDownloadM4b] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -17,6 +19,8 @@ export default function App() {
     setStatus("");
     setMp3("");
     setM4b("");
+    setDownloadMp3("");
+    setDownloadM4b("");
     setJobId("");
     setIsLoading(true);
 
@@ -30,45 +34,85 @@ export default function App() {
     try {
       const form = new FormData();
       form.append("file", file);
-      // Optionnel: form.append("voice", "Rachel"); form.append("lang", "fra");
+      // Optionnel : voice/lang
+      // form.append("voice", "Rachel");
+      // form.append("lang", "fra");
 
       const r = await fetch(`${API_BASE}/api/jobs`, { method: "POST", body: form });
       const data = await r.json();
       if (!r.ok) throw new Error(data.detail || "Échec création job");
+
       setJobId(data.id);
       setStatus(data.status);
+      setIsLoading(false);
     } catch (e) {
       setError(String(e));
       setIsLoading(false);
     }
   }
 
-  // Poll du statut
+  // Temps réel via SSE (fallback polling)
   useEffect(() => {
     if (!jobId) return;
-    setIsLoading(true);
 
-    const it = setInterval(async () => {
-      try {
-        const r = await fetch(`${API_BASE}/api/jobs/${jobId}`);
-        const data = await r.json();
-        setStatus(data.status);
-        if (data.output_mp3_url) setMp3(data.output_mp3_url);
-        if (data.output_m4b_url) setM4b(data.output_m4b_url);
-        if (data.error) setError(data.error);
+    let closed = false;
 
-        if (data.status === "DONE" || data.status === "ERROR") {
-          clearInterval(it);
-          setIsLoading(false);
+    if ("EventSource" in window) {
+      const es = new EventSource(`${API_BASE}/api/jobs/${jobId}/events`);
+      es.onmessage = (ev) => {
+        try {
+          const data = JSON.parse(ev.data);
+          if (data.error) setError(data.error);
+          if (data.status) setStatus(data.status);
+          if (data.output_mp3_url) setMp3(data.output_mp3_url);
+          if (data.output_m4b_url) setM4b(data.output_m4b_url);
+          if (data.download_mp3_url) setDownloadMp3(data.download_mp3_url);
+          if (data.download_m4b_url) setDownloadM4b(data.download_m4b_url);
+          if (data.status === "DONE" || data.status === "ERROR") {
+            es.close();
+          }
+        } catch (e) {
+          console.error(e);
         }
-      } catch (e) {
-        setError(String(e));
-        clearInterval(it);
-        setIsLoading(false);
-      }
-    }, 3000);
+      };
+      es.onerror = () => {
+        es.close();
+        if (!closed) startPolling();
+      };
+      return () => {
+        closed = true;
+        es.close();
+      };
+    } else {
+      startPolling();
+      return () => stopPolling();
+    }
 
-    return () => clearInterval(it);
+    function startPolling() {
+      stopPolling();
+      window.__poll = setInterval(async () => {
+        try {
+          const r = await fetch(`${API_BASE}/api/jobs/${jobId}`);
+          const data = await r.json();
+          if (data.error) setError(data.error);
+          if (data.status) setStatus(data.status);
+          if (data.output_mp3_url) setMp3(data.output_mp3_url);
+          if (data.output_m4b_url) setM4b(data.output_m4b_url);
+          if (data.download_mp3_url) setDownloadMp3(data.download_mp3_url);
+          if (data.download_m4b_url) setDownloadM4b(data.download_m4b_url);
+          if (data.status === "DONE" || data.status === "ERROR") stopPolling();
+        } catch (e) {
+          console.error(e);
+          stopPolling();
+        }
+      }, 3000);
+    }
+    function stopPolling() {
+      if (window.__poll) {
+        clearInterval(window.__poll);
+        window.__poll = null;
+      }
+    }
   }, [jobId]);
 
   return (
@@ -100,7 +144,11 @@ export default function App() {
         <div style={{ marginTop: 24 }}>
           <h3>MP3</h3>
           <audio controls src={mp3} style={{ width: "100%" }} />
-          <div><a href={mp3} target="_blank" rel="noreferrer">Télécharger MP3</a></div>
+          <div style={{ marginTop: 8 }}>
+            <a href={downloadMp3 || mp3} download target="_blank" rel="noreferrer">
+              Télécharger MP3
+            </a>
+          </div>
         </div>
       )}
 
@@ -108,9 +156,14 @@ export default function App() {
         <div style={{ marginTop: 24 }}>
           <h3>M4B</h3>
           <audio controls src={m4b} style={{ width: "100%" }} />
-          <div><a href={m4b} target="_blank" rel="noreferrer">Télécharger M4B</a></div>
+          <div style={{ marginTop: 8 }}>
+            <a href={downloadM4b || m4b} download target="_blank" rel="noreferrer">
+              Télécharger M4B
+            </a>
+          </div>
         </div>
       )}
     </div>
   );
 }
+
