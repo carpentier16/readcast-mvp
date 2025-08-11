@@ -1,9 +1,10 @@
-from datetime import datetime
+# backend/models/db.py
+from sqlalchemy import Column, String, DateTime, Enum as SQLEnum, Text
+from sqlalchemy.sql import func
 from enum import Enum
-from sqlalchemy import create_engine, Column, String, DateTime, Integer, Text
-from sqlalchemy.orm import declarative_base, sessionmaker
-
-Base = declarative_base()
+from ..settings import settings
+from sqlmodel import SQLModel, Field, create_engine, Session
+import uuid
 
 class JobStatus(str, Enum):
     PENDING = "PENDING"
@@ -11,22 +12,20 @@ class JobStatus(str, Enum):
     DONE = "DONE"
     ERROR = "ERROR"
 
-class Job(Base):
-    __tablename__ = "jobs"
-    id = Column(String, primary_key=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    status = Column(String, default=JobStatus.PENDING)
-    input_filename = Column(String)
-    lang = Column(String, default="fra")
-    voice = Column(String, default="Rachel")
-    error = Column(Text, nullable=True)
-    duration_sec = Column(Integer, default=0)
-    output_mp3_url = Column(String, nullable=True)
-    output_m4b_url = Column(String, nullable=True)
-    chapters_json_url = Column(String, nullable=True)
+class Job(SQLModel, table=True):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()), primary_key=True)
+    status: JobStatus = Field(sa_column=Column(SQLEnum(JobStatus), nullable=False, default=JobStatus.PENDING))
+    input_filename: str
+    output_mp3_url: str | None = None
+    output_m4b_url: str | None = None
+    error: str | None = None
+    preview_text: str | None = None  # 🔹 Nouveau champ
+    created_at: DateTime = Field(sa_column=Column(DateTime(timezone=True), server_default=func.now()))
 
 def get_engine(db_url: str):
-    return create_engine(db_url, future=True)
+    return create_engine(db_url, connect_args={"check_same_thread": False} if db_url.startswith("sqlite") else {})
 
 def get_session_maker(engine):
-    return sessionmaker(bind=engine, expire_on_commit=False)
+    from sqlmodel import sessionmaker
+    return sessionmaker(engine, expire_on_commit=False)
+
