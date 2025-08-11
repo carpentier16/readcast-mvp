@@ -1,117 +1,212 @@
-import { useState, useRef } from "react";
-import { Upload } from "lucide-react";
-import ProgressBar from "../components/ProgressBar"; // si absent, remplacez par un div simple
-const API_URL = import.meta.env.VITE_API_BASE;
+import React from "react";
+import FileDropzone from "../components/FileDropzone";
+import ProgressBar from "../components/ProgressBar";
+import AudioPlayer from "../components/AudioPlayer";
+
+// URL de ton backend (Render)
+const API_BASE = import.meta.env.VITE_API_BASE;
 
 export default function Convert() {
-  const [file, setFile] = useState(null);
-  const [status, setStatus] = useState("");
-  const [progress, setProgress] = useState(0);
-  const [preview, setPreview] = useState("");
-  const [mp3, setMp3] = useState("");
-  const [m4b, setM4b] = useState("");
-  const [dlMp3, setDlMp3] = useState("");
-  const [dlM4b, setDlM4b] = useState("");
-  const fileRef = useRef();
-
-  const onChoose = (e) => {
-    const f = e.target.files?.[0];
-    if (f) setFile(f);
-  };
+  const [file, setFile] = React.useState(null);
+  const [status, setStatus] = React.useState("");        // PENDING/RUNNING/DONE/ERROR
+  const [progress, setProgress] = React.useState(0);     // 0..100
+  const [preview, setPreview] = React.useState("");      // extrait OCR
+  const [mp3, setMp3] = React.useState("");
+  const [m4b, setM4b] = React.useState("");
+  const [dlMp3, setDlMp3] = React.useState("");
+  const [dlM4b, setDlM4b] = React.useState("");
+  const [voice, setVoice] = React.useState("Rachel");
+  const [lang, setLang] = React.useState("fra");
+  const [err, setErr] = React.useState("");
 
   async function startJob() {
-    if (!file) return;
-    setStatus("PENDING");
-    setProgress(5);
+    try {
+      setErr("");
+      setStatus("PENDING");
+      setProgress(5);
+      setPreview("");
+      setMp3(""); setM4b(""); setDlMp3(""); setDlM4b("");
 
-    const form = new FormData();
-    form.append("file", file);
-    // Optionnel: form.append("voice","Rachel"); form.append("lang","fra");
+      if (!file) {
+        setErr("Choisis un PDF d’abord.");
+        return;
+      }
 
-    const r = await fetch(`${API_URL}/api/jobs`, { method: "POST", body: form });
-    const data = await r.json();
-    if (!r.ok) {
-      alert(data.detail || "Erreur lors de la création du job");
-      return;
-    }
-    const jobId = data.id;
-    setStatus(data.status || "PENDING");
-    setProgress(10);
+      const form = new FormData();
+      form.append("file", file);
+      form.append("voice", voice);
+      form.append("lang", lang);
 
-    // SSE temps réel
-    const es = new EventSource(`${API_URL}/api/jobs/${jobId}/events`);
-    es.onmessage = (ev) => {
-      try {
-        const d = JSON.parse(ev.data);
-        if (d.status) setStatus(d.status);
-        if (typeof d.error === "string" && d.error.startsWith("PROGRESS::")) {
-          const p = Number(d.error.split("::")[1] || "0");
+      const r = await fetch(`${API_BASE}/api/jobs`, { method: "POST", body: form });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data?.detail || "Échec de création du job");
+
+      const jobId = data.id;
+      setStatus(data.status || "PENDING");
+      setProgress(10);
+
+      // --- SSE temps réel ---
+      if ("EventSource" in window) {
+        const es = new EventSource(`${API_BASE}/api/jobs/${jobId}/events`);
+        let closed = false;
+
+        es.onmessage = (ev) => {
+          try {
+            const d = JSON.parse(ev.data);
+            if (d.status) setStatus(d.status);
+            if (typeof d.error === "string" && d.error.startsWith("PROGRESS::")) {
+              const p = Number(d.error.split("::")[1] || "0");
+              if (!Number.isNaN(p)) setProgress(p);
+            }
+            if (d.preview_text) setPreview((p) => p || d.preview_text);
+            if (d.output_mp3_url) setMp3(d.output_mp3_url);
+            if (d.output_m4b_url) setM4b(d.output_m4b_url);
+            if (d.download_mp3_url) setDlMp3(d.download_mp3_url);
+            if (d.download_m4b_url) setDlM4b(d.download_m4b_url);
+
+            if (d.status === "DONE" || d.status === "ERROR") {
+              es.close();
+              closed = true;
+            }
+          } catch {
+            // ignore parse errors
+          }
+        };
+
+        es.addEventListener("progress", (ev) => {
+          const p = Number(ev.data || "0");
           if (!Number.isNaN(p)) setProgress(p);
-        }
-        if (d.output_mp3_url) setMp3(d.output_mp3_url);
-        if (d.output_m4b_url) setM4b(d.output_m4b_url);
-        if (d.download_mp3_url) setDlMp3(d.download_mp3_url);
-        if (d.download_m4b_url) setDlM4b(d.download_m4b_url);
-        if (d.preview_text) setPreview((p)=> p || d.preview_text);
-        if (d.status === "DONE" || d.status === "ERROR") es.close();
-      } catch {}
-    };
-    es.addEventListener("progress", (ev)=>{
-      const p = Number(ev.data || "0");
-      if (!Number.isNaN(p)) setProgress(p);
-    });
-    es.addEventListener("end", ()=> es.close());
+        });
+
+        es.addEventListener("end", () => {
+          es.close();
+          closed = true;
+          // petit refresh final
+          refresh(jobId);
+        });
+
+        es.onerror = () => {
+          es.close();
+          if (!closed) {
+            // fallback polling si SSE tombe
+            startPolling(jobId);
+          }
+        };
+      } else {
+        // vieux navigateurs : polling direct
+        startPolling(jobId);
+      }
+    } catch (e) {
+      setErr(String(e.message || e));
+      setStatus("ERROR");
+    }
+  }
+
+  function startPolling(jobId) {
+    stopPolling();
+    window.__poll_it = setInterval(async () => {
+      const done = await refresh(jobId);
+      if (done) stopPolling();
+    }, 3000);
+  }
+  function stopPolling() {
+    if (window.__poll_it) {
+      clearInterval(window.__poll_it);
+      window.__poll_it = null;
+    }
+  }
+  async function refresh(jobId) {
+    try {
+      const r = await fetch(`${API_BASE}/api/jobs/${jobId}`);
+      const d = await r.json();
+      if (d.status) setStatus(d.status);
+      if (typeof d.error === "string" && d.error.startsWith("PROGRESS::")) {
+        const p = Number(d.error.split("::")[1] || "0");
+        if (!Number.isNaN(p)) setProgress(p);
+      }
+      if (d.preview_text) setPreview((p) => p || d.preview_text);
+      if (d.output_mp3_url) setMp3(d.output_mp3_url);
+      if (d.output_m4b_url) setM4b(d.output_m4b_url);
+      if (d.download_mp3_url) setDlMp3(d.download_mp3_url);
+      if (d.download_m4b_url) setDlM4b(d.download_m4b_url);
+      return d.status === "DONE" || d.status === "ERROR";
+    } catch {
+      return false;
+    }
   }
 
   return (
-    <div className="space-y-6 max-w-2xl mx-auto">
-      <h1 className="text-2xl font-semibold">Convertir un PDF</h1>
+    <div className="space-y-6 max-w-3xl mx-auto">
+      <header className="flex items-center justify-between">
+        <h1 className="text-2xl font-semibold">Convertir un PDF</h1>
+        <span className="badge">{status || "PRÊT"}</span>
+      </header>
 
-      <div className="border-2 border-dashed rounded-xl p-6 text-center hover:border-brand-400 transition">
-        <input type="file" accept="application/pdf" className="hidden" ref={fileRef} onChange={onChoose} />
-        <button className="btn btn-ghost" onClick={()=>fileRef.current?.click()}>
-          <Upload className="mr-2" size={18}/> {file ? file.name : "Choisir un PDF"}
-        </button>
+      <div className="grid lg:grid-cols-2 gap-6">
+        {/* Col gauche : Upload + paramètres */}
+        <div className="card p-6">
+          <div className="space-y-4">
+            <FileDropzone onFileSelected={(f) => setFile(f)} />
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-sm text-slate-600">Voix</label>
+                <input
+                  className="input"
+                  value={voice}
+                  onChange={(e) => setVoice(e.target.value)}
+                  placeholder="Rachel ou un voice_id"
+                />
+              </div>
+              <div>
+                <label className="text-sm text-slate-600">Langue OCR</label>
+                <select className="input" value={lang} onChange={(e) => setLang(e.target.value)}>
+                  <option value="fra">Français</option>
+                  <option value="eng">Anglais</option>
+                  <option value="spa">Espagnol</option>
+                  <option value="deu">Allemand</option>
+                </select>
+              </div>
+            </div>
+
+            <button className="btn btn-primary w-full" onClick={startJob} disabled={!file || status === "RUNNING"}>
+              Convertir en audiobook
+            </button>
+
+            {err && (
+              <pre className="p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700 whitespace-pre-wrap">
+                {err}
+              </pre>
+            )}
+          </div>
+        </div>
+
+        {/* Col droite : Preview + Progress */}
+        <div className="space-y-6">
+          <div className="card p-6">
+            <div className="flex items-center justify-between">
+              <h2 className="font-semibold">Prévisualisation du texte</h2>
+              <span className="text-xs text-slate-500">{preview ? "extrait" : "en attente…"}</span>
+            </div>
+            <div className="mt-3 h-56 overflow-auto rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm whitespace-pre-wrap">
+              {preview || "Le texte extrait s’affichera ici quand l’OCR/TTS démarre."}
+            </div>
+          </div>
+
+          <div className="card p-6">
+            <h2 className="font-semibold mb-3">Progression</h2>
+            <ProgressBar progress={progress} />
+          </div>
+        </div>
       </div>
 
-      <button onClick={startJob} className="btn btn-primary w-full">Convertir en audiobook</button>
-
-      {!!status && (
-        <div className="card p-4">
-          <div className="text-sm text-slate-600 mb-2">Statut: <b>{status}</b></div>
-          <div className="w-full h-3 bg-slate-200 rounded-full overflow-hidden">
-            <div className="h-3 bg-brand-600" style={{width: `${progress}%`}}/>
-          </div>
-          <div className="text-right text-xs mt-1">{progress}%</div>
-        </div>
-      )}
-
-      {preview && (
-        <div className="card p-4">
-          <div className="font-semibold mb-2">Aperçu du texte</div>
-          <div className="text-sm whitespace-pre-wrap max-h-48 overflow-auto bg-slate-50 border border-slate-200 rounded-xl p-3">
-            {preview}
-          </div>
-        </div>
-      )}
-
+      {/* Résultats */}
       {(mp3 || m4b) && (
-        <div className="card p-4">
+        <div className="card p-6">
+          <h2 className="font-semibold mb-4">Résultats</h2>
           <div className="grid md:grid-cols-2 gap-6">
-            {mp3 && (
-              <div>
-                <div className="font-medium mb-1">MP3</div>
-                <audio controls src={mp3} className="w-full mb-2"/>
-                <a href={dlMp3 || mp3} download target="_blank" rel="noreferrer" className="btn btn-ghost">Télécharger MP3</a>
-              </div>
-            )}
-            {m4b && (
-              <div>
-                <div className="font-medium mb-1">M4B</div>
-                <audio controls src={m4b} className="w-full mb-2"/>
-                <a href={dlM4b || m4b} download target="_blank" rel="noreferrer" className="btn btn-ghost">Télécharger M4B</a>
-              </div>
-            )}
+            <AudioPlayer src={mp3} downloadUrl={dlMp3} label="MP3" />
+            <AudioPlayer src={m4b} downloadUrl={dlM4b} label="M4B" />
           </div>
         </div>
       )}
