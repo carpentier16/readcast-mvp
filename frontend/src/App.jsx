@@ -1,283 +1,200 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
-import UploadCard from "./components/UploadCard";
+// src/App.jsx
+import React, { useState } from "react";
+import FileDropzone from "./components/FileDropzone";
 import VoicePicker from "./components/VoicePicker";
-import ProgressBar from "./components/ProgressBar";
 import AudioResult from "./components/AudioResult";
 import History from "./components/History";
-import { createJob, getJob } from "./utils/api";
+import { createJob, getJob, uploadPdf } from "./utils/api";
 
-const TABS = [
-  { key: "all", label: "Tous" },
-  { key: "running", label: "En cours" },
-  { key: "done", label: "Terminés" },
-];
-
-// NOTE: à mapper plus tard sur des “vraies” voices côté backend
 const VOICES = [
-  {
-    id: "Rachel",
-    name: "Rachel",
-    subtitle: "Féminine • Chaleureuse",
-  },
-  // exemples visuels (peuvent aussi pointer sur Rachel en attendant)
-  { id: "Rachel", name: "Emma", subtitle: "Féminine • Narrative" },
-  { id: "Rachel", name: "Thomas", subtitle: "Masculine • Professionnelle" },
-  { id: "Rachel", name: "Antoine", subtitle: "Masculine • Dramatique" },
+  { id: "Rachel",  name: "Rachel",  subtitle: "Féminine • Chaleureuse" },
+  { id: "Emma",    name: "Emma",    subtitle: "Féminine • Narrative" },
+  { id: "Thomas",  name: "Thomas",  subtitle: "Masculine • Professionnelle" },
+  { id: "Antoine", name: "Antoine", subtitle: "Masculine • Dramatique" },
 ];
 
 export default function App() {
-  const [selectedVoice, setSelectedVoice] = useState(VOICES[0]);
   const [file, setFile] = useState(null);
-
-  const [job, setJob] = useState(null); // { id, status, mp3, m4b, error, filename }
+  const [voiceId, setVoiceId] = useState(VOICES[0].id);
+  const [job, setJob] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [history, setHistory] = useState([]);
+  const [activeTab, setActiveTab] = useState("all"); // all | running | done
 
-  const [history, setHistory] = useState(() => {
+  const onFileSelected = (f) => setFile(f);
+  const onVoiceSelected = (id) => setVoiceId(id);
+
+  async function handleConvert() {
+    if (!file) return;
     try {
-      const raw = localStorage.getItem("readcast_history");
-      return raw ? JSON.parse(raw) : [];
-    } catch {
-      return [];
-    }
-  });
+      setIsSubmitting(true);
 
-  const [activeTab, setActiveTab] = useState("all");
+      // 1) Upload
+      const { filename } = await uploadPdf(file);
 
-  // Persiste l'historique
-  useEffect(() => {
-    localStorage.setItem("readcast_history", JSON.stringify(history));
-  }, [history]);
+      // 2) Create job
+      const jobResp = await createJob({
+        filename,
+        voice: voiceId,
+      });
+      setJob(jobResp);
 
-  const onDropFile = useCallback((f) => setFile(f), []);
+      // 3) Poll job
+      let current = jobResp;
+      const start = Date.now();
+      const poll = setInterval(async () => {
+        const next = await getJob(current.id);
+        setJob(next);
 
-  // Submit job
-  const onConvert = useCallback(async () => {
-    if (!file || isSubmitting) return;
-    setIsSubmitting(true);
-    setJob(null);
+        // history update (client-side only)
+        setHistory((prev) => {
+          const rest = prev.filter((h) => h.id !== next.id);
+          return [next, ...rest].slice(0, 20);
+        });
 
-    try {
-      const created = await createJob(file, selectedVoice?.id || "Rachel");
-      // created { id, status, ... }
-      const newJob = {
-        id: created.id,
-        status: created.status,
-        filename: created.input_filename,
-        createdAt: new Date().toISOString(),
-        mp3: created.output_mp3_url || null,
-        m4b: created.output_m4b_url || null,
-        error: created.error || null,
-      };
-      setJob(newJob);
-      setHistory((prev) => [newJob, ...prev]);
+        if (next.status === "DONE" || next.status === "ERROR") {
+          clearInterval(poll);
+        }
+
+        // safety timeout (6 min)
+        if (Date.now() - start > 6 * 60 * 1000) clearInterval(poll);
+      }, 1200);
     } catch (e) {
-      alert("Erreur lors de la création du job.");
+      console.error(e);
+      alert("Échec de la conversion.");
     } finally {
       setIsSubmitting(false);
     }
-  }, [file, isSubmitting, selectedVoice]);
-
-  // Polling du job courant tant que pas DONE/ERROR
-  useEffect(() => {
-    if (!job?.id) return;
-
-    let cancel = false;
-    const tick = async () => {
-      try {
-        const fresh = await getJob(job.id);
-        if (cancel) return;
-
-        const updated = {
-          id: fresh.id,
-          status: fresh.status,
-          filename: fresh.input_filename,
-          createdAt: job.createdAt,
-          mp3: fresh.output_mp3_url || null,
-          m4b: fresh.output_m4b_url || null,
-          error: fresh.error || null,
-        };
-        setJob(updated);
-
-        // maj historique
-        setHistory((prev) =>
-          prev.map((j) => (j.id === updated.id ? updated : j))
-        );
-
-        if (fresh.status === "RUNNING" || fresh.status === "PENDING") {
-          setTimeout(tick, 1500);
-        }
-      } catch {
-        setTimeout(tick, 1500);
-      }
-    };
-    tick();
-
-    return () => {
-      cancel = true;
-    };
-  }, [job?.id]);
-
-  const filteredHistory = useMemo(() => {
-    if (activeTab === "running")
-      return history.filter((h) => h.status !== "DONE" && !h.error);
-    if (activeTab === "done") return history.filter((h) => h.status === "DONE");
-    return history;
-  }, [activeTab, history]);
-
-  const progress = useMemo(() => {
-    if (!job) return 0;
-    if (job.status === "PENDING") return 10;
-    if (job.status === "RUNNING") return 60; // approx
-    if (job.status === "DONE") return 100;
-    return 0;
-  }, [job]);
+  }
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-neutral-100">
+    <div className="min-h-screen bg-gradient-to-b from-sky-50 to-white text-zinc-900">
       {/* Header */}
-      <header className="sticky top-0 z-30 backdrop-blur bg-neutral-950/60 border-b border-white/10">
-        <div className="max-w-6xl mx-auto px-5 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 p-2 shadow-lg shadow-blue-500/20">
-              <svg
-                width="22"
-                height="22"
-                viewBox="0 0 24 24"
-                fill="none"
-                className="text-white"
-              >
-                <path
-                  d="M12 3l7 4v10l-7 4-7-4V7l7-4z"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                />
-              </svg>
+      <header className="sticky top-0 z-20 border-b border-sky-100 bg-white/80 backdrop-blur">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+          <div className="flex items-center gap-2">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-600 text-white">
+              <span className="text-lg font-bold">R</span>
             </div>
-            <span className="font-semibold text-lg tracking-tight">
-              Readcast
-            </span>
-            <span className="ml-3 px-2 py-0.5 text-xs rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
-              Beta
-            </span>
+            <span className="text-xl font-semibold tracking-tight">ReadCast</span>
           </div>
-
-          <div className="hidden sm:flex items-center gap-6 text-sm">
-            <a
-              href="#"
-              className="text-white/60 hover:text-white transition-colors"
-              onClick={(e) => e.preventDefault()}
-            >
-              Docs API
-            </a>
-            <div className="px-2.5 py-1 rounded-lg border border-white/10 bg-white/5 text-xs">
-              API: {import.meta.env.VITE_API_BASE?.replace(/^https?:\/\//, "")}
-            </div>
+          <div className="inline-flex items-center gap-2 rounded-full bg-sky-50 px-3 py-1 text-sm text-sky-700 ring-1 ring-sky-100">
+            <span className="inline-block h-2 w-2 rounded-full bg-emerald-500" />
+            2 crédits restants
           </div>
         </div>
       </header>
 
       {/* Hero */}
-      <section className="max-w-6xl mx-auto px-5 pt-10">
-        <h1 className="text-3xl md:text-4xl font-semibold tracking-tight">
-          PDF →{" "}
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-400 to-fuchsia-400">
-            Audiobook
-          </span>
-          , en quelques secondes
-        </h1>
-        <p className="mt-2 text-white/60 max-w-2xl">
-          Dépose ton PDF, choisis une voix, et on te rend un MP3/M4B propre et
-          prêt à écouter. Idéal pour manuscrits, notes, ebooks, scans.
-        </p>
+      <section className="border-b border-sky-100 bg-white">
+        <div className="mx-auto max-w-6xl px-6 py-10">
+          <h1 className="text-3xl font-bold tracking-tight text-zinc-900">
+            PDF → Audiobook, en quelques secondes
+          </h1>
+          <p className="mt-2 max-w-2xl text-zinc-600">
+            Dépose ton PDF, choisis une voix, et on te rend un MP3/M4B propre et prêt à écouter.
+            Idéal pour manuscrits, notes, scans et ebooks.
+          </p>
+        </div>
       </section>
 
-      {/* Upload + Voix */}
-      <section className="max-w-6xl mx-auto px-5 mt-8 grid md:grid-cols-2 gap-6">
-        <UploadCard
-          file={file}
-          onDrop={onDropFile}
-          onConvert={onConvert}
-          isSubmitting={isSubmitting}
-        />
-
-        <VoicePicker
-          voices={VOICES}
-          selected={selectedVoice}
-          onSelect={setSelectedVoice}
-        />
-      </section>
-
-      {/* Résultat en direct */}
-      <section className="max-w-6xl mx-auto px-5 mt-8">
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-medium">Résultat</h2>
-            {!!job?.status && (
-              <span
-                className={`text-xs px-2 py-1 rounded-md border ${
-                  job.status === "DONE"
-                    ? "bg-emerald-500/10 text-emerald-300 border-emerald-500/30"
-                    : job.error
-                    ? "bg-rose-500/10 text-rose-300 border-rose-500/30"
-                    : "bg-amber-500/10 text-amber-300 border-amber-500/30"
-                }`}
-              >
-                {job.error
-                  ? "ERREUR"
-                  : job.status === "DONE"
-                  ? "TERMINÉ"
-                  : job.status}
-              </span>
-            )}
-          </div>
-
-          {!job && <div className="text-white/50">Aucun job en cours.</div>}
-
-          {!!job && job.status !== "DONE" && !job.error && (
-            <ProgressBar value={progress} />
-          )}
-
-          {!!job && job.error && (
-            <div className="text-rose-300 text-sm leading-relaxed whitespace-pre-wrap bg-rose-500/5 border border-rose-500/30 rounded-xl p-3">
-              {job.error}
+      <main className="mx-auto max-w-6xl px-6 pb-24">
+        {/* Row: Upload + Voices */}
+        <div className="mt-8 grid gap-6 md:grid-cols-2">
+          {/* Upload card */}
+          <div className="rounded-3xl border border-sky-100 bg-white p-6 shadow-sm">
+            <div className="mb-5 flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-100 text-sky-700">
+                📘
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold">Nouveau Audiobook</h2>
+                <p className="text-sm text-zinc-500">PDF, EPUB, DOCX (jusqu’à 100&nbsp;MB)</p>
+              </div>
             </div>
-          )}
 
-          {!!job && job.status === "DONE" && (
-            <AudioResult job={job} className="mt-4" />
-          )}
-        </div>
-      </section>
+            <FileDropzone
+              file={file}
+              onSelected={onFileSelected}
+              className="rounded-2xl border-2 border-dashed border-sky-200 bg-sky-50/50 p-6 hover:bg-sky-50"
+            />
 
-      {/* Historique */}
-      <section className="max-w-6xl mx-auto px-5 mt-10 pb-16">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-medium">Historique</h2>
-          <div className="flex gap-2">
-            {TABS.map((t) => (
+            <div className="mt-4 flex items-center justify-between">
+              <div className="text-sm text-zinc-500">
+                Formats de sortie : <span className="font-medium text-zinc-700">MP3 & M4B</span>
+              </div>
               <button
-                key={t.key}
-                onClick={() => setActiveTab(t.key)}
-                className={`text-sm px-3 py-1.5 rounded-lg border transition ${
-                  activeTab === t.key
-                    ? "bg-white text-neutral-900 border-white"
-                    : "border-white/10 text-white/70 hover:bg-white/10"
-                }`}
+                onClick={handleConvert}
+                disabled={!file || isSubmitting}
+                className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium text-white
+                ${!file || isSubmitting ? "bg-sky-300 cursor-not-allowed" : "bg-sky-600 hover:bg-sky-700"}
+                shadow-sm`}
               >
-                {t.label}
+                {isSubmitting ? "Conversion..." : "Convertir"}
               </button>
-            ))}
+            </div>
+          </div>
+
+          {/* Voice picker */}
+          <div className="rounded-3xl border border-sky-100 bg-white p-6 shadow-sm">
+            <div className="mb-5 flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-100 text-sky-700">
+                🎙️
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold">Choisir la voix narratrice</h2>
+                <p className="text-sm text-zinc-500">Écoute et sélectionne la voix avant conversion.</p>
+              </div>
+            </div>
+
+            <VoicePicker
+              voices={VOICES}
+              selectedId={voiceId}
+              onSelect={onVoiceSelected}
+              className="grid grid-cols-2 gap-3"
+              cardClass="rounded-2xl border border-sky-100 bg-sky-50/50 hover:bg-sky-50"
+              selectedClass="ring-2 ring-sky-400 bg-white"
+            />
           </div>
         </div>
 
-        <History
-          items={filteredHistory}
-          onClear={() => setHistory([])}
-          onRemove={(id) =>
-            setHistory((prev) => prev.filter((j) => j.id !== id))
-          }
-        />
-      </section>
+        {/* Result */}
+        <section className="mt-8">
+          <AudioResult job={job} />
+        </section>
+
+        {/* History */}
+        <section className="mt-10 rounded-3xl border border-sky-100 bg-white p-6 shadow-sm">
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="text-lg font-semibold">Mes Audiobooks</h3>
+            <div className="flex gap-1 rounded-full bg-sky-50 p-1 ring-1 ring-sky-100">
+              <Tab label="Tous" active={activeTab === "all"} onClick={() => setActiveTab("all")} />
+              <Tab label="En cours" active={activeTab === "running"} onClick={() => setActiveTab("running")} />
+              <Tab label="Terminés" active={activeTab === "done"} onClick={() => setActiveTab("done")} />
+            </div>
+          </div>
+
+          <History
+            items={history}
+            filter={activeTab}
+            className="grid gap-3"
+            cardClass="rounded-2xl border border-sky-100 bg-sky-50/50 hover:bg-sky-50"
+          />
+        </section>
+      </main>
     </div>
+  );
+}
+
+function Tab({ label, active, onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`rounded-full px-3 py-1 text-sm font-medium ${
+        active ? "bg-white text-sky-700 shadow-sm" : "text-sky-700/70 hover:text-sky-800"
+      }`}
+    >
+      {label}
+    </button>
   );
 }
