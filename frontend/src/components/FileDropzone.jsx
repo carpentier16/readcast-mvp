@@ -1,3 +1,5 @@
+import React from 'react';
+
 import { useCallback, useRef, useState } from "react";
 
 export default function Dropzone({ onFileSelected, disabled }) {
