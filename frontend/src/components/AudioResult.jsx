@@ -1,3 +1,5 @@
+import React from 'react';
+
 export default function AudioResult({ job }) {
   if (!job) return null;
   const { status, output_mp3_url, output_m4b_url, id } = job;
