@@ -1,3 +1,5 @@
+import React from 'react';
+
 export default function HistoryList({ items = [] }) {
   if (!items.length) {
     return <div className="text-sm text-white/50">Aucun élément pour le moment.</div>;
