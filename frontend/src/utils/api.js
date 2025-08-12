@@ -1,26 +1,35 @@
-const API_BASE = import.meta.env.VITE_API_BASE?.replace(/\/$/, "");
+const FALLBACK = "https://audiobook-api-xbmz.onrender.com";
 
-export async function uploadPDF(file, voiceId) {
+function safeBase() {
+  // Vite en prod: injecte VITE_API_BASE si défini dans Vercel
+  const envVal = import.meta?.env?.VITE_API_BASE;
+  try {
+    return new URL(envVal || FALLBACK).toString().replace(/\/+$/, "");
+  } catch {
+    return FALLBACK;
+  }
+}
+
+export const API_BASE = safeBase();
+
+export async function uploadPdf(file, voice = "Rachel") {
   const form = new FormData();
   form.append("file", file);
-  if (voiceId) form.append("voice_id", voiceId);
+  form.append("voice", voice);
 
-  const res = await fetch(`${API_BASE}/api/jobs`, { method: "POST", body: form });
-  if (!res.ok) throw new Error(`Upload failed: ${res.status}`);
-  return res.json(); // { id }
+  const res = await fetch(`${API_BASE}/api/jobs`, {
+    method: "POST",
+    body: form,
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`POST /api/jobs ${res.status}: ${text || res.statusText}`);
+  }
+  return res.json();
 }
 
 export async function getJob(id) {
   const res = await fetch(`${API_BASE}/api/jobs/${id}`);
-  if (!res.ok) throw new Error("Job fetch failed");
+  if (!res.ok) throw new Error(`GET /api/jobs/${id} ${res.status}`);
   return res.json();
-}
-
-export async function listJobs(limit = 20) {
-  // si tu as un endpoint /api/jobs?limit=… côté backend, sinon stocke localStorage côté front
-  try {
-    const res = await fetch(`${API_BASE}/api/jobs?limit=${limit}`);
-    if (res.ok) return res.json();
-  } catch {}
-  return [];
 }
