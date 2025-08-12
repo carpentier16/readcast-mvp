@@ -1,3 +1,5 @@
+import React from 'react';
+
 export default function AudioPlayer({ src, downloadUrl, label = "Écouter" }) {
   if (!src) return null;
   return (
