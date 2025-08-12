@@ -1,31 +1,52 @@
-import React from "react";
+import { useCallback, useRef, useState } from "react";
 
-export default function FileDropzone({ accept = "application/pdf", onFileSelected }) {
-  const inputRef = React.useRef(null);
-  const [dragOver, setDragOver] = React.useState(false);
+export default function Dropzone({ onFileSelected, disabled }) {
+  const inputRef = useRef(null);
+  const [isOver, setOver] = useState(false);
+  const [fileName, setFileName] = useState("");
 
-  function onChoose(e) {
-    const f = e.target.files?.[0];
-    if (f && onFileSelected) onFileSelected(f);
-  }
-  function onDrop(e) {
-    e.preventDefault();
-    setDragOver(false);
-    const f = e.dataTransfer.files?.[0];
-    if (f && onFileSelected) onFileSelected(f);
-  }
+  const handleFiles = useCallback((files) => {
+    const f = files?.[0];
+    if (!f) return;
+    setFileName(f.name);
+    onFileSelected?.(f);
+  }, [onFileSelected]);
 
   return (
     <div
-      onDragOver={(e)=>{e.preventDefault(); setDragOver(true);}}
-      onDragLeave={()=>setDragOver(false)}
-      onDrop={onDrop}
-      className={`border-2 border-dashed rounded-2xl p-8 text-center transition cursor-pointer ${dragOver ? "border-brand-400 bg-brand-50" : "border-slate-300 hover:border-slate-400"}`}
-      onClick={()=>inputRef.current?.click()}
+      onDragOver={(e) => { e.preventDefault(); setOver(true); }}
+      onDragLeave={() => setOver(false)}
+      onDrop={(e) => {
+        e.preventDefault();
+        setOver(false);
+        handleFiles(e.dataTransfer.files);
+      }}
+      className={`card p-5 transition ${isOver ? "ring-2 ring-[rgb(var(--brand))]" : ""}`}
     >
-      <input ref={inputRef} type="file" accept={accept} className="hidden" onChange={onChoose} />
-      <div className="text-lg font-medium">Glisse ton fichier ici</div>
-      <div className="text-slate-500">ou clique pour choisir</div>
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <div className="text-sm text-white/70">Glisse-dépose ton PDF ici, ou sélectionne-le.</div>
+          <div className="text-xs text-white/40 mt-1">Taille max : 100 MB • Sorties : MP3 & M4B</div>
+          {!!fileName && <div className="mt-2 text-white/80 text-sm">Sélectionné : <span className="font-medium">{fileName}</span></div>}
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            className="btn-muted"
+            onClick={() => inputRef.current?.click()}
+            disabled={disabled}
+          >
+            Choisir un fichier
+          </button>
+        </div>
+      </div>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="application/pdf"
+        className="hidden"
+        onChange={(e) => handleFiles(e.target.files)}
+        disabled={disabled}
+      />
     </div>
   );
 }
