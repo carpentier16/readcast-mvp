@@ -1,27 +1,26 @@
-const API = import.meta.env.VITE_API_BASE?.replace(/\/$/, "");
+const API_BASE = import.meta.env.VITE_API_BASE?.replace(/\/$/, "");
 
-export async function createJob(file, voiceId) {
-  if (!API) throw new Error("VITE_API_BASE manquant.");
-
+export async function uploadPDF(file, voiceId) {
   const form = new FormData();
   form.append("file", file);
-  // côté backend, “voice” est optionnel — garde Rachel par défaut si non mappé
-  form.append("voice", voiceId || "Rachel");
+  if (voiceId) form.append("voice_id", voiceId);
 
-  const res = await fetch(`${API}/api/jobs`, {
-    method: "POST",
-    body: form,
-  });
-
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(text || "HTTP error");
-  }
-  return res.json();
+  const res = await fetch(`${API_BASE}/api/jobs`, { method: "POST", body: form });
+  if (!res.ok) throw new Error(`Upload failed: ${res.status}`);
+  return res.json(); // { id }
 }
 
 export async function getJob(id) {
-  const res = await fetch(`${API}/api/jobs/${id}`);
-  if (!res.ok) throw new Error("HTTP error");
+  const res = await fetch(`${API_BASE}/api/jobs/${id}`);
+  if (!res.ok) throw new Error("Job fetch failed");
   return res.json();
+}
+
+export async function listJobs(limit = 20) {
+  // si tu as un endpoint /api/jobs?limit=… côté backend, sinon stocke localStorage côté front
+  try {
+    const res = await fetch(`${API_BASE}/api/jobs?limit=${limit}`);
+    if (res.ok) return res.json();
+  } catch {}
+  return [];
 }
