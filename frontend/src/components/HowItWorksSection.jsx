@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
+import { useTranslation } from '../hooks/useTranslation';
 
 const HowItWorksSection = () => {
+  const { t } = useTranslation();
   const [activeStep, setActiveStep] = useState(0);
 
   const steps = [
     {
       number: "01",
-      title: "Upload PDF",
-      description: "Select your PDF document and drag it into our secure upload area. We support files up to 50MB with bank-level encryption.",
+      title: t('how.step1.title'),
+      description: t('how.step1.desc'),
       icon: (
         <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
@@ -18,8 +20,8 @@ const HowItWorksSection = () => {
     },
     {
       number: "02",
-      title: "Choose Voice & Language",
-      description: "Pick from our collection of natural AI voices in multiple languages. Customize speed, pitch, and emotion for perfect narration.",
+      title: t('how.step2.title'),
+      description: t('how.step2.desc'),
       icon: (
         <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
@@ -30,8 +32,8 @@ const HowItWorksSection = () => {
     },
     {
       number: "03",
-      title: "AI Processing",
-      description: "Our advanced AI analyzes your document structure, extracts text intelligently, and converts it to natural-sounding speech.",
+      title: t('how.step3.title'),
+      description: t('how.step3.desc'),
       icon: (
         <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
@@ -42,8 +44,8 @@ const HowItWorksSection = () => {
     },
     {
       number: "04",
-      title: "Download & Enjoy",
-      description: "Get your high-quality MP3 file instantly. Listen on any device, share with others, or create audiobooks for your projects.",
+      title: t('how.step4.title'),
+      description: t('how.step4.desc'),
       icon: (
         <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -60,14 +62,13 @@ const HowItWorksSection = () => {
         {/* Header */}
         <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-            How It
+            {t('how.title.line1')}
             <span className="block text-blue-600">
-              Works
+              {t('how.title.line2')}
             </span>
           </h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Our streamlined process makes converting PDFs to audio as simple as 1-2-3-4. 
-            Experience the future of document consumption in just a few clicks.
+            {t('how.description')}
           </p>
         </div>
 
@@ -88,7 +89,7 @@ const HowItWorksSection = () => {
                   : 'border-gray-200 hover:border-gray-300 hover:shadow-xl'
               }`}>
                 {/* Background Gradient */}
-                <div className={`absolute inset-0 bg-gradient-to-br ${step.bgColor} opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-3xl`}></div>
+                <div className={`absolute inset-0 bg-${step.bgColor} opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-3xl`}></div>
                 
                 {/* Content */}
                 <div className="relative z-10">
@@ -116,7 +117,7 @@ const HowItWorksSection = () => {
                 </div>
 
                 {/* Hover Effect */}
-                <div className={`absolute inset-0 bg-gradient-to-r ${step.color} opacity-0 group-hover:opacity-5 rounded-3xl transition-opacity duration-500`}></div>
+                <div className={`absolute inset-0 bg-${step.color} opacity-0 group-hover:opacity-5 rounded-3xl transition-opacity duration-500`}></div>
               </div>
             </div>
           ))}
@@ -126,10 +127,10 @@ const HowItWorksSection = () => {
         <div className="bg-white rounded-3xl p-12 shadow-2xl border border-gray-200 mb-16">
           <div className="text-center mb-8">
             <h3 className="text-3xl font-bold text-gray-900 mb-4">
-              Visual Process Flow
+              {t('how.visual.title')}
             </h3>
             <p className="text-xl text-gray-600">
-              See how your document flows through our AI-powered pipeline
+              {t('how.visual.subtitle')}
             </p>
           </div>
 
@@ -168,10 +169,10 @@ const HowItWorksSection = () => {
         <div className="text-center">
           <div className="bg-blue-600 rounded-3xl p-12 text-white">
             <h3 className="text-3xl font-bold mb-4">
-              Ready to Get Started?
+              {t('how.cta.title')}
             </h3>
             <p className="text-xl mb-8 opacity-90">
-              Join thousands of users who have already transformed their reading experience.
+              {t('how.cta.subtitle')}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <button 
@@ -184,7 +185,7 @@ const HowItWorksSection = () => {
                 }}
                 className="bg-white text-blue-600 hover:bg-gray-100 px-8 py-4 rounded-xl font-semibold text-lg transition-colors duration-200"
               >
-                Start Converting Now
+                {t('how.cta.start')}
               </button>
               <button 
                 onClick={() => {
@@ -193,7 +194,7 @@ const HowItWorksSection = () => {
                 }}
                 className="border-2 border-white text-white hover:bg-white hover:text-blue-600 px-8 py-4 rounded-xl font-semibold text-lg transition-all duration-200"
               >
-                View Examples
+                {t('how.cta.examples')}
               </button>
             </div>
           </div>

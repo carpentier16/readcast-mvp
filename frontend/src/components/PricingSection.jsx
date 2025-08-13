@@ -1,52 +1,54 @@
 import React, { useState } from 'react';
+import { useTranslation } from '../hooks/useTranslation';
 
 const PricingSection = () => {
+  const { t } = useTranslation();
   const [billingCycle, setBillingCycle] = useState('monthly');
 
   const plans = [
     {
-      name: "Starter",
+      name: t('pricing.starter.title'),
       price: { monthly: 9, yearly: 90 },
-      description: "Perfect for individual users and small projects",
+      description: t('pricing.starter.desc'),
       features: [
-        "Up to 10 PDF conversions per month",
-        "Basic AI voices (3 options)",
-        "Standard quality audio",
-        "Email support",
-        "Basic analytics"
+        t('pricing.starter.features.0'),
+        t('pricing.starter.features.1'),
+        t('pricing.starter.features.2'),
+        t('pricing.starter.features.3'),
+        t('pricing.starter.features.4')
       ],
       popular: false,
       color: "from-blue-500 to-indigo-600"
     },
     {
-      name: "Professional",
+      name: t('pricing.professional.title'),
       price: { monthly: 29, yearly: 290 },
-      description: "Ideal for professionals and growing teams",
+      description: t('pricing.professional.desc'),
       features: [
-        "Up to 100 PDF conversions per month",
-        "Premium AI voices (6 options)",
-        "High quality audio (320kbps)",
-        "Priority email support",
-        "Advanced analytics",
-        "Custom voice settings",
-        "Bulk processing"
+        t('pricing.professional.features.0'),
+        t('pricing.professional.features.1'),
+        t('pricing.professional.features.2'),
+        t('pricing.professional.features.3'),
+        t('pricing.professional.features.4'),
+        t('pricing.professional.features.5'),
+        t('pricing.professional.features.6')
       ],
       popular: true,
       color: "from-purple-500 to-pink-600"
     },
     {
-      name: "Enterprise",
+      name: t('pricing.enterprise.title'),
       price: { monthly: 99, yearly: 990 },
-      description: "For large organizations and high-volume needs",
+      description: t('pricing.enterprise.desc'),
       features: [
-        "Unlimited PDF conversions",
-        "All AI voices + custom voices",
-        "Studio quality audio (lossless)",
-        "24/7 phone & email support",
-        "Advanced analytics & reporting",
-        "API access",
-        "White-label solutions",
-        "Dedicated account manager"
+        t('pricing.enterprise.features.0'),
+        t('pricing.enterprise.features.1'),
+        t('pricing.enterprise.features.2'),
+        t('pricing.enterprise.features.3'),
+        t('pricing.enterprise.features.4'),
+        t('pricing.enterprise.features.5'),
+        t('pricing.enterprise.features.6'),
+        t('pricing.enterprise.features.7')
       ],
       popular: false,
       color: "from-green-500 to-emerald-600"
@@ -69,14 +71,13 @@ const PricingSection = () => {
         {/* Header */}
         <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-            Simple, Transparent
+            {t('pricing.title.line1')}
             <span className="block text-blue-600">
-              Pricing
+              {t('pricing.title.line2')}
             </span>
           </h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Choose the plan that fits your needs. All plans include a 14-day free trial 
-            with no credit card required.
+            {t('pricing.description')}
           </p>
         </div>
 
@@ -92,7 +93,7 @@ const PricingSection = () => {
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
-                Monthly
+                {t('pricing.monthly')}
               </button>
               <button
                 onClick={() => setBillingCycle('yearly')}
@@ -102,9 +103,9 @@ const PricingSection = () => {
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
-                Yearly
+                {t('pricing.yearly')}
                 <span className="ml-2 text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
-                  Save 20%
+                  {t('pricing.save')}
                 </span>
               </button>
             </div>
@@ -142,7 +143,7 @@ const PricingSection = () => {
                     ${plan.price[billingCycle]}
                   </span>
                   <span className="text-gray-600 ml-2">
-                    /{billingCycle === 'monthly' ? 'month' : 'year'}
+                    /{billingCycle === 'monthly' ? t('pricing.monthly').toLowerCase() : t('pricing.yearly').toLowerCase()}
                   </span>
                 </div>
 
@@ -155,13 +156,13 @@ const PricingSection = () => {
                       : 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl'
                   }`}
                 >
-                  Start Free Trial
+                  {t('pricing.cta.start')}
                 </button>
               </div>
 
               {/* Features List */}
               <div className="space-y-4">
-                <h4 className="font-semibold text-gray-900 mb-4">What's included:</h4>
+                <h4 className="font-semibold text-gray-900 mb-4">{t('pricing.features.title')}</h4>
                 {plan.features.map((feature, featureIndex) => (
                   <div key={featureIndex} className="flex items-center">
                     <svg className="w-5 h-5 text-green-500 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -179,16 +180,16 @@ const PricingSection = () => {
         <div className="text-center mb-16">
           <div className="bg-gray-900 rounded-3xl p-12 text-white">
             <h3 className="text-3xl font-bold mb-4">
-              Need a Custom Solution?
+              {t('pricing.enterprise.cta.title')}
             </h3>
             <p className="text-xl mb-8 opacity-90">
-              We offer custom pricing for enterprise clients with specific requirements.
+              {t('pricing.enterprise.cta.subtitle')}
             </p>
             <button
               onClick={handleContactSales}
               className="bg-white text-gray-900 hover:bg-gray-100 px-8 py-4 rounded-xl font-semibold text-lg transition-colors duration-200"
             >
-              Contact Sales Team
+              {t('pricing.enterprise.cta.button')}
             </button>
           </div>
         </div>
@@ -196,24 +197,24 @@ const PricingSection = () => {
         {/* FAQ Section */}
         <div className="text-center">
           <h3 className="text-3xl font-bold text-gray-900 mb-8">
-            Frequently Asked Questions
+            {t('pricing.faq.title')}
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
             <div className="text-left">
-              <h4 className="font-semibold text-gray-900 mb-2">Can I cancel anytime?</h4>
-              <p className="text-gray-600">Yes, you can cancel your subscription at any time with no cancellation fees.</p>
+              <h4 className="font-semibold text-gray-900 mb-2">{t('pricing.faq.cancel.title')}</h4>
+              <p className="text-gray-600">{t('pricing.faq.cancel.answer')}</p>
             </div>
             <div className="text-left">
-              <h4 className="font-semibold text-gray-900 mb-2">What payment methods do you accept?</h4>
-              <p className="text-gray-600">We accept all major credit cards, PayPal, and bank transfers for enterprise plans.</p>
+              <h4 className="font-semibold text-gray-900 mb-2">{t('pricing.faq.payment.title')}</h4>
+              <p className="text-gray-600">{t('pricing.faq.payment.answer')}</p>
             </div>
             <div className="text-left">
-              <h4 className="font-semibold text-gray-900 mb-2">Is there a free trial?</h4>
-              <p className="text-gray-600">Yes, all plans include a 14-day free trial with full access to features.</p>
+              <h4 className="font-semibold text-gray-900 mb-2">{t('pricing.faq.trial.title')}</h4>
+              <p className="text-gray-600">{t('pricing.faq.trial.answer')}</p>
             </div>
             <div className="text-left">
-              <h4 className="font-semibold text-gray-900 mb-2">Do you offer refunds?</h4>
-              <p className="text-gray-600">We offer a 30-day money-back guarantee if you're not satisfied with our service.</p>
+              <h4 className="font-semibold text-gray-900 mb-2">{t('pricing.faq.refund.title')}</h4>
+              <p className="text-gray-600">{t('pricing.faq.refund.answer')}</p>
             </div>
           </div>
         </div>

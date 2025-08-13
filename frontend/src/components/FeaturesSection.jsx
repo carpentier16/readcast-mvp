@@ -1,73 +1,75 @@
 import React, { useState } from 'react';
+import { useTranslation } from '../hooks/useTranslation';
 
 const FeaturesSection = () => {
+  const { t } = useTranslation();
   const [activeFeature, setActiveFeature] = useState(0);
 
   const features = [
     {
-      title: "AI-Powered Conversion",
-      description: "Our advanced artificial intelligence ensures natural-sounding audio with perfect pronunciation and intonation.",
+      title: t('features.ai.title'),
+      description: t('features.ai.desc'),
       icon: (
         <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
         </svg>
       ),
-      details: ["Natural voice synthesis", "Multiple language support", "Context-aware reading"],
+      details: [t('features.ai.details.0'), t('features.ai.details.1'), t('features.ai.details.2')],
       color: "blue-500"
     },
     {
-      title: "Professional Quality",
-      description: "Studio-grade audio output with customizable settings for speed, pitch, and voice selection.",
+      title: t('features.quality.title'),
+      description: t('features.quality.desc'),
       icon: (
         <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
         </svg>
       ),
-      details: ["High-fidelity audio", "Customizable settings", "Professional voices"],
+      details: [t('features.quality.details.0'), t('features.quality.details.1'), t('features.quality.details.2')],
       color: "green-500"
     },
     {
-      title: "Lightning Fast",
-      description: "Convert documents in seconds, not minutes. Our optimized processing ensures quick turnaround times.",
+      title: t('features.speed.title'),
+      description: t('features.speed.desc'),
       icon: (
         <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
         </svg>
       ),
-      details: ["Instant processing", "Batch conversion", "Real-time preview"],
+      details: [t('features.speed.details.0'), t('features.speed.details.1'), t('features.speed.details.2')],
       color: "purple-500"
     },
     {
-      title: "Secure & Private",
-      description: "Bank-level encryption ensures your documents remain confidential throughout the entire process.",
+      title: t('features.security.title'),
+      description: t('features.security.desc'),
       icon: (
         <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
         </svg>
       ),
-      details: ["End-to-end encryption", "GDPR compliant", "Secure cloud storage"],
+      details: [t('features.security.details.0'), t('features.security.details.1'), t('features.security.details.2')],
       color: "red-500"
     },
     {
-      title: "Multi-Platform",
-      description: "Access your audio files from anywhere. Works seamlessly across all devices and platforms.",
+      title: t('features.platform.title'),
+      description: t('features.platform.desc'),
       icon: (
         <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
         </svg>
       ),
-      details: ["Cross-platform sync", "Mobile optimized", "Offline access"],
+      details: [t('features.platform.details.0'), t('features.platform.details.1'), t('features.platform.details.2')],
       color: "indigo-500"
     },
     {
-      title: "24/7 Support",
-      description: "Our dedicated support team is always ready to help you get the most out of ReadCast.",
+      title: t('features.support.title'),
+      description: t('features.support.desc'),
       icon: (
         <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 0l3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" />
         </svg>
       ),
-      details: ["Live chat support", "Video tutorials", "Knowledge base"],
+      details: [t('features.support.details.0'), t('features.support.details.1'), t('features.support.details.2')],
       color: "orange-500"
     }
   ];
@@ -78,13 +80,13 @@ const FeaturesSection = () => {
         {/* Header */}
         <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-            Features
+            {t('features.title')}
             <span className="block text-blue-600">
-              That Matter
+              {t('features.subtitle')}
             </span>
           </h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Discover why thousands of users choose ReadCast for their document-to-audio conversion needs.
+            {t('features.description')}
           </p>
         </div>
 
@@ -146,14 +148,14 @@ const FeaturesSection = () => {
           ))}
         </div>
 
-        {/* Interactive Demo */}
-        <div className="bg-white rounded-3xl p-12 shadow-2xl border border-gray-200">
+        {/* Try It Yourself Section */}
+        <div className="bg-white rounded-3xl p-12 shadow-2xl border border-gray-200 mb-16">
           <div className="text-center mb-8">
             <h3 className="text-3xl font-bold text-gray-900 mb-4">
               Try It Yourself
             </h3>
             <p className="text-xl text-gray-600">
-              Experience the power of our AI voice synthesis with a live demo
+              Experience our features firsthand with interactive demos
             </p>
           </div>
 
@@ -240,7 +242,7 @@ const FeaturesSection = () => {
                 }}
                 className="bg-white text-blue-600 hover:bg-gray-100 px-8 py-4 rounded-xl font-semibold text-lg transition-colors duration-200"
               >
-                Start Free Trial
+                {t('common.startFreeTrial')}
               </button>
               <button 
                 onClick={() => {
@@ -249,7 +251,7 @@ const FeaturesSection = () => {
                 }}
                 className="border-2 border-white text-white hover:bg-white hover:text-blue-600 px-8 py-4 rounded-xl font-semibold text-lg transition-all duration-200"
               >
-                Watch Demo
+                {t('common.watchDemo')}
               </button>
             </div>
           </div>
