@@ -34,7 +34,9 @@ const translate = (key, language) => {
   }
   
   if (value) {
-    for (const k of keys) {
+    // Commencer par le deuxième élément car le premier est le nom de la section
+    for (let i = 1; i < keys.length; i++) {
+      const k = keys[i];
       if (value && value[k] !== undefined) {
         value = value[k];
       } else {
@@ -55,7 +57,9 @@ const translate = (key, language) => {
   }
   
   if (fallbackValue) {
-    for (const k of keys) {
+    // Commencer par le deuxième élément car le premier est le nom de la section
+    for (let i = 1; i < keys.length; i++) {
+      const k = keys[i];
       if (fallbackValue && fallbackValue[k] !== undefined) {
         fallbackValue = fallbackValue[k];
       } else {
