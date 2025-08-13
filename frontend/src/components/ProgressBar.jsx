@@ -1,3 +1,5 @@
+import React from 'react';
+
 export default function Progress({ value = 0, label = "" }) {
   return (
     <div className="card p-4">
