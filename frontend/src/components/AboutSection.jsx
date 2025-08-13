@@ -72,7 +72,7 @@ const AboutSection = () => {
         <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
             About
-            <span className="block bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
+            <span className="block text-blue-600">
               ReadCast
             </span>
           </h2>
@@ -152,7 +152,7 @@ const AboutSection = () => {
         </div>
 
         {/* Story */}
-        <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-3xl p-12 text-white mb-20">
+        <div className="bg-blue-600 rounded-3xl p-12 text-white mb-20">
           <div className="text-center">
             <h3 className="text-3xl font-bold mb-6">Our Story</h3>
             <p className="text-xl mb-8 opacity-90 leading-relaxed">
@@ -181,7 +181,7 @@ const AboutSection = () => {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <button
                 onClick={handleContactUs}
-                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-8 py-4 rounded-xl font-semibold text-lg transition-all duration-300"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-xl font-semibold text-lg transition-all duration-300"
               >
                 Contact Us
               </button>

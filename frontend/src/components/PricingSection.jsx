@@ -70,7 +70,7 @@ const PricingSection = () => {
         <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
             Simple, Transparent
-            <span className="block bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
+            <span className="block text-blue-600">
               Pricing
             </span>
           </h2>
@@ -125,7 +125,7 @@ const PricingSection = () => {
               {/* Popular Badge */}
               {plan.popular && (
                 <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                  <div className="bg-gradient-to-r from-purple-500 to-pink-600 text-white px-6 py-2 rounded-full text-sm font-semibold shadow-lg">
+                  <div className="bg-purple-600 text-white px-6 py-2 rounded-full text-sm font-semibold shadow-lg">
                     Most Popular
                   </div>
                 </div>
@@ -151,8 +151,8 @@ const PricingSection = () => {
                   onClick={() => handleStartTrial(plan.name)}
                   className={`w-full py-4 px-6 rounded-xl font-semibold text-lg transition-all duration-300 ${
                     plan.popular
-                      ? 'bg-gradient-to-r from-purple-500 to-pink-600 text-white hover:from-purple-600 hover:to-pink-700 shadow-lg hover:shadow-xl'
-                      : 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white hover:from-blue-600 hover:to-indigo-700 shadow-lg hover:shadow-xl'
+                      ? 'bg-purple-600 hover:bg-purple-700 text-white shadow-lg hover:shadow-xl'
+                      : 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl'
                   }`}
                 >
                   Start Free Trial
@@ -177,7 +177,7 @@ const PricingSection = () => {
 
         {/* Enterprise CTA */}
         <div className="text-center mb-16">
-          <div className="bg-gradient-to-r from-gray-900 to-gray-800 rounded-3xl p-12 text-white">
+          <div className="bg-gray-900 rounded-3xl p-12 text-white">
             <h3 className="text-3xl font-bold mb-4">
               Need a Custom Solution?
             </h3>

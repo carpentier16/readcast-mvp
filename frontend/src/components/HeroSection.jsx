@@ -159,88 +159,61 @@ const HeroSection = () => {
   };
 
   return (
-    <section id="hero" className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-white via-blue-50 to-indigo-100 pt-20">
+    <section id="hero" className="relative min-h-screen flex items-center justify-center overflow-hidden bg-white pt-20">
       {/* Background Elements Subtils */}
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-blue-100/40 to-indigo-100/40 rounded-full blur-3xl"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-br from-indigo-100/40 to-purple-100/40 rounded-full blur-3xl"></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-br from-blue-50/30 to-indigo-50/30 rounded-full blur-3xl"></div>
-      </div>
-
-      {/* Status Badge */}
-      <div className="absolute top-8 right-8 z-20">
-        <div className={`inline-flex items-center px-4 py-2 rounded-full shadow-lg border ${
-          connectionStatus === 'connected' 
-            ? 'bg-green-50 border-green-200 text-green-700' 
-            : connectionStatus === 'disconnected'
-            ? 'bg-red-50 border-red-200 text-red-700'
-            : 'bg-yellow-50 border-yellow-200 text-yellow-700'
-        }`}>
-          <div className={`w-2 h-2 rounded-full mr-2 ${
-            connectionStatus === 'connected' ? 'bg-green-500' : 'bg-red-500'
-          } ${connectionStatus === 'checking' ? 'animate-pulse' : ''}`}></div>
-          <span className="text-sm font-medium">
-            {connectionStatus === 'connected' ? 'Backend Connected' : 
-             connectionStatus === 'disconnected' ? 'Backend Disconnected' : 
-             'Checking Connection...'}
-          </span>
+        {/* Floating Icons */}
+        <div className="absolute top-20 left-10 text-blue-100 text-6xl animate-float-slow">
+          📄
+        </div>
+        <div className="absolute top-40 right-20 text-indigo-100 text-4xl animate-float-medium">
+          🎧
+        </div>
+        <div className="absolute bottom-40 left-20 text-purple-100 text-5xl animate-float-fast">
+          🔊
+        </div>
+        <div className="absolute bottom-20 right-10 text-blue-100 text-3xl animate-float-slow">
+          📱
         </div>
       </div>
 
-      {/* Floating Icons Subtils */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-20 left-20 animate-float-slow">
-          <div className="w-16 h-16 bg-white/80 backdrop-blur-sm rounded-2xl border border-blue-100 shadow-lg flex items-center justify-center">
-            <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        {/* Status Badge */}
+        <div className="absolute top-8 right-8 z-20">
+          <div className={`inline-flex items-center px-4 py-2 rounded-full shadow-lg border ${
+            connectionStatus === 'connected' 
+              ? 'bg-green-50 border-green-200 text-green-700' 
+              : connectionStatus === 'disconnected'
+              ? 'bg-red-50 border-red-200 text-red-700'
+              : 'bg-yellow-50 border-yellow-200 text-yellow-700'
+          }`}>
+            <div className={`w-2 h-2 rounded-full mr-2 ${
+              connectionStatus === 'connected' ? 'bg-green-500' : 'bg-red-500'
+            } ${connectionStatus === 'checking' ? 'animate-pulse' : ''}`}></div>
+            <span className="text-sm font-medium">
+              {connectionStatus === 'connected' ? 'Backend Connected' : 
+               connectionStatus === 'disconnected' ? 'Backend Disconnected' : 
+               'Checking Connection...'}
+            </span>
           </div>
         </div>
-        <div className="absolute top-40 right-32 animate-float-medium">
-          <div className="w-12 h-12 bg-white/80 backdrop-blur-sm rounded-xl border border-indigo-100 shadow-lg flex items-center justify-center">
-            <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-            </svg>
-          </div>
-        </div>
-        <div className="absolute bottom-32 left-32 animate-float-fast">
-          <div className="w-20 h-20 bg-white/80 backdrop-blur-sm rounded-2xl border border-purple-100 shadow-lg flex items-center justify-center">
-            <svg className="w-10 h-10 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
-            </svg>
-          </div>
-        </div>
-      </div>
 
-      <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
         {/* Animated Badge */}
-        <div className="inline-flex items-center px-6 py-3 bg-white/90 backdrop-blur-sm border border-blue-200 rounded-full shadow-lg mb-8 animate-fade-in-up">
-          <div className="w-3 h-3 bg-green-500 rounded-full mr-3 animate-pulse"></div>
-          <span className="text-sm font-semibold text-gray-800">Trusted by 10,000+ users worldwide</span>
+        <div className="inline-flex items-center px-6 py-3 rounded-full bg-blue-100 text-blue-800 font-semibold text-sm mb-8 animate-fade-in-up">
+          <span className="w-2 h-2 bg-blue-600 rounded-full mr-3 animate-pulse"></span>
+          🚀 Transformez vos PDFs en audio en quelques secondes
         </div>
 
-        {/* Main Heading with Typewriter Effect */}
-        <h1 className="text-5xl md:text-7xl font-bold mb-8 leading-tight">
-          <span className="block text-gray-900 mb-4">
-            {texts[currentText].split(' ').map((word, index) => (
-              <span
-                key={index}
-                className="inline-block mr-4 animate-fade-in-up"
-                style={{ animationDelay: `${index * 100}ms` }}
-              >
-                {word}
-              </span>
-            ))}
-          </span>
-          <span className="block bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
-            AI-Powered
-          </span>
+        {/* Main Heading */}
+        <h1 className="text-5xl md:text-7xl font-bold text-gray-900 mb-8 animate-fade-in-up" style={{ animationDelay: '200ms' }}>
+          <span className="block">Vos Documents</span>
+          <span className="block text-blue-600">Prennent Vie</span>
         </h1>
-        
-        {/* Subtitle */}
-        <p className="text-xl md:text-2xl text-gray-700 mb-12 max-w-4xl mx-auto leading-relaxed animate-fade-in-up" style={{ animationDelay: '500ms' }}>
-          Experience the future of document consumption. Our advanced AI transforms any PDF into 
-          natural-sounding audio with multiple voice options and professional quality.
+
+        {/* Subheading */}
+        <p className="text-xl md:text-2xl text-gray-700 mb-12 max-w-4xl mx-auto animate-fade-in-up" style={{ animationDelay: '400ms' }}>
+          Convertissez instantanément vos PDFs en audio naturel avec notre IA avancée. 
+          Écoutez vos documents partout, tout le temps.
         </p>
         
         {/* Voice and Language Selection */}

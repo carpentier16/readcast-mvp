@@ -5,84 +5,70 @@ const FeaturesSection = () => {
 
   const features = [
     {
+      title: "AI-Powered Conversion",
+      description: "Our advanced artificial intelligence ensures natural-sounding audio with perfect pronunciation and intonation.",
       icon: (
-        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+        </svg>
+      ),
+      details: ["Natural voice synthesis", "Multiple language support", "Context-aware reading"],
+      color: "blue-500"
+    },
+    {
+      title: "Professional Quality",
+      description: "Studio-grade audio output with customizable settings for speed, pitch, and voice selection.",
+      icon: (
+        <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
         </svg>
       ),
-      title: "AI Voice Synthesis",
-      description: "Advanced neural networks generate natural-sounding voices that are indistinguishable from human speech.",
-      details: [
-        "Multiple voice personalities",
-        "Emotion and tone control",
-        "Natural pronunciation",
-        "Multi-language support"
-      ],
-      color: "from-blue-500 to-indigo-600"
+      details: ["High-fidelity audio", "Customizable settings", "Professional voices"],
+      color: "green-500"
     },
     {
+      title: "Lightning Fast",
+      description: "Convert documents in seconds, not minutes. Our optimized processing ensures quick turnaround times.",
       icon: (
-        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-        </svg>
-      ),
-      title: "Smart Document Processing",
-      description: "Intelligent parsing that understands document structure, formatting, and content hierarchy.",
-      details: [
-        "Layout preservation",
-        "Table recognition",
-        "Image description",
-        "Smart chapter detection"
-      ],
-      color: "from-green-500 to-emerald-600"
-    },
-    {
-      icon: (
-        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
         </svg>
       ),
-      title: "Lightning Fast Conversion",
-      description: "Optimized processing pipeline that converts documents in seconds, not minutes.",
-      details: [
-        "Parallel processing",
-        "GPU acceleration",
-        "Cloud optimization",
-        "Real-time preview"
-      ],
-      color: "from-purple-500 to-pink-600"
+      details: ["Instant processing", "Batch conversion", "Real-time preview"],
+      color: "purple-500"
     },
     {
+      title: "Secure & Private",
+      description: "Bank-level encryption ensures your documents remain confidential throughout the entire process.",
       icon: (
-        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
         </svg>
       ),
-      title: "Enterprise Security",
-      description: "Bank-level encryption and compliance standards to protect your sensitive documents.",
-      details: [
-        "End-to-end encryption",
-        "SOC 2 compliance",
-        "GDPR ready",
-        "Audit logging"
-      ],
-      color: "from-red-500 to-orange-600"
+      details: ["End-to-end encryption", "GDPR compliant", "Secure cloud storage"],
+      color: "red-500"
     },
     {
+      title: "Multi-Platform",
+      description: "Access your audio files from anywhere. Works seamlessly across all devices and platforms.",
       icon: (
-        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+        <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
         </svg>
       ),
-      title: "Personalized Experience",
-      description: "Learn from your preferences to deliver increasingly accurate and tailored conversions.",
-      details: [
-        "Voice preference learning",
-        "Speed optimization",
-        "Content adaptation",
-        "User feedback integration"
-      ],
-      color: "from-pink-500 to-rose-600"
+      details: ["Cross-platform sync", "Mobile optimized", "Offline access"],
+      color: "indigo-500"
+    },
+    {
+      title: "24/7 Support",
+      description: "Our dedicated support team is always ready to help you get the most out of ReadCast.",
+      icon: (
+        <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 0l3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" />
+        </svg>
+      ),
+      details: ["Live chat support", "Video tutorials", "Knowledge base"],
+      color: "orange-500"
     }
   ];
 
@@ -92,60 +78,69 @@ const FeaturesSection = () => {
         {/* Header */}
         <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-            Powerful Features for
-            <span className="block bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
-              Professional Results
+            Features
+            <span className="block text-blue-600">
+              That Matter
             </span>
           </h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Discover the advanced capabilities that make ReadCast the most sophisticated 
-            PDF-to-audio conversion platform available.
+            Discover why thousands of users choose ReadCast for their document-to-audio conversion needs.
           </p>
         </div>
 
         {/* Features Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
           {features.map((feature, index) => (
             <div
               key={index}
-              className={`group cursor-pointer transition-all duration-300 ${
+              className={`group cursor-pointer transition-all duration-500 ${
                 activeFeature === index ? 'scale-105' : 'hover:scale-102'
               }`}
               onClick={() => setActiveFeature(index)}
+              onMouseEnter={() => setActiveFeature(index)}
             >
-              <div className={`bg-white rounded-2xl p-8 shadow-lg border-2 transition-all duration-300 ${
+              <div className={`relative bg-white rounded-3xl p-8 shadow-lg border-2 transition-all duration-500 ${
                 activeFeature === index 
                   ? 'border-blue-300 shadow-2xl shadow-blue-100/50' 
                   : 'border-gray-200 hover:border-gray-300 hover:shadow-xl'
               }`}>
-                {/* Icon */}
-                <div className={`w-16 h-16 rounded-2xl bg-gradient-to-r ${feature.color} flex items-center justify-center text-white mb-6 group-hover:scale-110 transition-transform duration-300`}>
-                  {feature.icon}
-                </div>
+                {/* Background Color */}
+                <div className={`absolute inset-0 bg-${feature.color} opacity-0 group-hover:opacity-5 transition-opacity duration-500 rounded-3xl`}></div>
                 
                 {/* Content */}
-                <h3 className="text-2xl font-bold text-gray-900 mb-4 group-hover:text-blue-600 transition-colors duration-300">
-                  {feature.title}
-                </h3>
-                
-                <p className="text-gray-600 mb-6 leading-relaxed">
-                  {feature.description}
-                </p>
-
-                {/* Details List */}
-                <ul className="space-y-2">
-                  {feature.details.map((detail, detailIndex) => (
-                    <li key={detailIndex} className="flex items-center text-sm text-gray-600">
-                      <svg className="w-4 h-4 text-green-500 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                      {detail}
-                    </li>
-                  ))}
-                </ul>
+                <div className="relative z-10">
+                  {/* Icon */}
+                  <div className={`w-20 h-20 rounded-2xl bg-${feature.color} bg-opacity-10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300`}>
+                    <div className={`text-${feature.color}`}>
+                      {feature.icon}
+                    </div>
+                  </div>
+                  
+                  {/* Title */}
+                  <h3 className="text-xl font-bold text-gray-900 mb-4 group-hover:text-blue-600 transition-colors duration-300">
+                    {feature.title}
+                  </h3>
+                  
+                  {/* Description */}
+                  <p className="text-gray-600 leading-relaxed mb-6">
+                    {feature.description}
+                  </p>
+                  
+                  {/* Details */}
+                  <div className="space-y-2">
+                    {feature.details.map((detail, detailIndex) => (
+                      <div key={detailIndex} className="flex items-center text-sm text-gray-500">
+                        <svg className="w-4 h-4 text-green-500 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        {detail}
+                      </div>
+                    ))}
+                  </div>
+                </div>
 
                 {/* Hover Effect */}
-                <div className={`absolute inset-0 bg-gradient-to-r ${feature.color} opacity-0 group-hover:opacity-5 rounded-2xl transition-opacity duration-300`}></div>
+                <div className={`absolute inset-0 bg-${feature.color} opacity-0 group-hover:opacity-5 rounded-3xl transition-opacity duration-500`}></div>
               </div>
             </div>
           ))}
@@ -227,7 +222,7 @@ const FeaturesSection = () => {
 
         {/* CTA Section */}
         <div className="text-center mt-16">
-          <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-3xl p-12 text-white">
+          <div className="bg-blue-600 rounded-3xl p-12 text-white">
             <h3 className="text-3xl font-bold mb-4">
               Ready to Transform Your Documents?
             </h3>
