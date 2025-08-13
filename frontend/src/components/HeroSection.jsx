@@ -1,9 +1,23 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 
 const HeroSection = () => {
   const [file, setFile] = useState(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [currentText, setCurrentText] = useState(0);
+
+  const texts = [
+    "The world's most trusted PDF to audio converter",
+    "Transform any document into crystal-clear audio",
+    "AI-powered voice synthesis that sounds human"
+  ];
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentText((prev) => (prev + 1) % texts.length);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [texts.length]);
 
   const handleFileChange = (event) => {
     const selectedFile = event.target.files[0];
@@ -15,7 +29,6 @@ const HeroSection = () => {
 
   const handleFileUpload = async (file) => {
     setIsUploading(true);
-    // Simuler un upload
     setTimeout(() => {
       setIsUploading(false);
     }, 2000);
@@ -43,78 +56,191 @@ const HeroSection = () => {
   }, []);
 
   return (
-    <section className="bg-gradient-to-br from-blue-50 to-indigo-100 py-20">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        {/* Main Heading */}
-        <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6 leading-tight animate-fade-in">
-          The world's most trusted{' '}
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
-            PDF to audio converter
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 pt-20">
+      {/* Background Elements */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-blue-400/20 to-purple-400/20 rounded-full blur-3xl"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-br from-indigo-400/20 to-pink-400/20 rounded-full blur-3xl"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-br from-blue-300/10 to-indigo-300/10 rounded-full blur-3xl"></div>
+      </div>
+
+      {/* Floating Icons */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-20 left-20 animate-float-slow">
+          <div className="w-16 h-16 bg-white/10 backdrop-blur-sm rounded-2xl border border-white/20 flex items-center justify-center">
+            <svg className="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+          </div>
+        </div>
+        <div className="absolute top-40 right-32 animate-float-medium">
+          <div className="w-12 h-12 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 flex items-center justify-center">
+            <svg className="w-6 h-6 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+            </svg>
+          </div>
+        </div>
+        <div className="absolute bottom-32 left-32 animate-float-fast">
+          <div className="w-20 h-20 bg-white/10 backdrop-blur-sm rounded-2xl border border-white/20 flex items-center justify-center">
+            <svg className="w-10 h-10 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        {/* Animated Badge */}
+        <div className="inline-flex items-center px-4 py-2 bg-white/80 backdrop-blur-sm border border-white/20 rounded-full shadow-lg mb-8 animate-fade-in-up">
+          <div className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
+          <span className="text-sm font-medium text-gray-700">Trusted by 10,000+ users worldwide</span>
+        </div>
+
+        {/* Main Heading with Typewriter Effect */}
+        <h1 className="text-5xl md:text-7xl font-bold mb-8 leading-tight">
+          <span className="block text-gray-900 mb-4">
+            {texts[currentText].split(' ').map((word, index) => (
+              <span
+                key={index}
+                className="inline-block mr-4 animate-fade-in-up"
+                style={{ animationDelay: `${index * 100}ms` }}
+              >
+                {word}
+              </span>
+            ))}
+          </span>
+          <span className="block bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
+            AI-Powered
           </span>
         </h1>
         
         {/* Subtitle */}
-        <p className="text-xl md:text-2xl text-gray-600 mb-12 max-w-3xl mx-auto leading-relaxed">
-          Easily convert PDF documents into natural-sounding audio content. 
-          Transform your reading experience with AI-powered voice synthesis.
+        <p className="text-xl md:text-2xl text-gray-600 mb-12 max-w-4xl mx-auto leading-relaxed animate-fade-in-up" style={{ animationDelay: '500ms' }}>
+          Experience the future of document consumption. Our advanced AI transforms any PDF into 
+          natural-sounding audio with multiple voice options and professional quality.
         </p>
         
-        {/* Upload Area */}
-        <div className={`bg-white rounded-2xl p-12 mb-8 shadow-lg transition-all duration-300 ${
-          isDragOver ? 'scale-105 shadow-xl border-2 border-blue-400' : ''
-        }`}>
-          <div className="max-w-md mx-auto">
-            {/* File Input */}
-            <input 
-              type="file" 
-              accept=".pdf"
-              onChange={handleFileChange}
-              className="hidden"
-              id="pdf-upload"
-              disabled={isUploading}
-            />
+        {/* Upload Area Ultra-Moderne */}
+        <div className={`relative max-w-2xl mx-auto mb-12 animate-fade-in-up`} style={{ animationDelay: '700ms' }}>
+          <div className={`relative bg-white/80 backdrop-blur-md rounded-3xl p-12 shadow-2xl border-2 transition-all duration-500 ${
+            isDragOver 
+              ? 'border-blue-400 scale-105 shadow-blue-200/50' 
+              : 'border-white/20 hover:border-blue-200/50'
+          }`}>
+            {/* Glow Effect */}
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-3xl blur-xl opacity-0 hover:opacity-100 transition-opacity duration-500"></div>
             
-            {/* Upload Button */}
-            <label 
-              htmlFor="pdf-upload" 
-              className={`inline-flex items-center justify-center px-8 py-4 rounded-xl font-semibold text-lg transition-all duration-200 cursor-pointer ${
-                isUploading 
-                  ? 'bg-gray-400 cursor-not-allowed' 
-                  : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transform hover:-translate-y-1'
-              }`}
-            >
-              {isUploading ? (
-                <>
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Converting...
-                </>
-              ) : (
-                <>
-                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                  </svg>
-                  Click here to convert a PDF!
-                </>
-              )}
-            </label>
+            <div className="relative z-10">
+              {/* File Input */}
+              <input 
+                type="file" 
+                accept=".pdf"
+                onChange={handleFileChange}
+                className="hidden"
+                id="pdf-upload"
+                disabled={isUploading}
+              />
+              
+              {/* Upload Button */}
+              <label 
+                htmlFor="pdf-upload" 
+                className={`group inline-flex items-center justify-center px-12 py-6 rounded-2xl font-bold text-xl transition-all duration-300 cursor-pointer ${
+                  isUploading 
+                    ? 'bg-gray-400 cursor-not-allowed' 
+                    : 'bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 text-white shadow-2xl hover:shadow-blue-500/25 transform hover:-translate-y-2'
+                }`}
+              >
+                {isUploading ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-3 h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Processing your document...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-6 h-6 mr-3 group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                    Upload PDF & Convert to Audio
+                  </>
+                )}
+              </label>
 
-            {/* File Selected Status */}
-            {file && (
-              <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-                <div className="flex items-center justify-center">
-                  <svg className="w-5 h-5 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              {/* Drag & Drop Text */}
+              <p className="text-gray-500 mt-6 text-lg font-medium">
+                or drag and drop your PDF here
+              </p>
+
+              {/* File Types */}
+              <div className="flex items-center justify-center mt-4 space-x-4 text-sm text-gray-400">
+                <span className="flex items-center">
+                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  <span className="text-green-800 font-medium">{file.name}</span>
-                </div>
-                <p className="text-green-600 text-sm mt-1">
-                  File size: {(file.size / 1024 / 1024).toFixed(2)} MB
-                </p>
+                  PDF files
+                </span>
+                <span className="flex items-center">
+                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Up to 50MB
+                </span>
+                <span className="flex items-center">
+                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Secure & private
+                </span>
               </div>
-            )}
+            </div>
+          </div>
+
+          {/* File Selected Status */}
+          {file && (
+            <div className="absolute -bottom-20 left-1/2 transform -translate-x-1/2 w-full max-w-md">
+              <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-white/20">
+                <div className="flex items-center justify-center mb-3">
+                  <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                    <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <div className="text-left">
+                    <h3 className="font-bold text-gray-900">{file.name}</h3>
+                    <p className="text-sm text-gray-600">
+                      {(file.size / 1024 / 1024).toFixed(2)} MB • Ready to convert
+                    </p>
+                  </div>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full transition-all duration-300" style={{ width: isUploading ? '60%' : '100%' }}></div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Trust Indicators */}
+        <div className="flex flex-wrap items-center justify-center space-x-8 text-gray-500 animate-fade-in-up" style={{ animationDelay: '900ms' }}>
+          <div className="flex items-center">
+            <svg className="w-5 h-5 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span className="text-sm font-medium">99.9% Uptime</span>
+          </div>
+          <div className="flex items-center">
+            <svg className="w-5 h-5 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+            <span className="text-sm font-medium">Bank-level Security</span>
+          </div>
+          <div className="flex items-center">
+            <svg className="w-5 h-5 mr-2 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+            <span className="text-sm font-medium">Lightning Fast</span>
           </div>
         </div>
       </div>
