@@ -16,6 +16,7 @@ export { default as PDFExtractor } from './PDFExtractor';
 export { default as ProjectHistory } from './ProjectHistory';
 export { default as AudioPlayer } from './AudioPlayer';
 export { default as ProjectManager } from './ProjectManager';
+export { default as FileSelector } from './FileSelector';
 
 // Configuration et Services
 export { default as API_CONFIG } from '../config/api.js';

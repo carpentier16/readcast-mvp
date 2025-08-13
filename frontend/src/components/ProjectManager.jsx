@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from '../hooks/useTranslation.jsx';
+import { projectsAPI, jobsAPI } from '../services/api.js';
 import PDFExtractor from './PDFExtractor.jsx';
 import ProjectHistory from './ProjectHistory.jsx';
 import AudioPlayer from './AudioPlayer.jsx';
+import FileSelector from './FileSelector.jsx';
 
 const ProjectManager = () => {
   const { t } = useTranslation();
@@ -11,61 +13,27 @@ const ProjectManager = () => {
   const [showHistory, setShowHistory] = useState(false);
   const [activeAudioUrl, setActiveAudioUrl] = useState(null);
   const [activeAudioTitle, setActiveAudioTitle] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   // Charger les projets depuis le localStorage au démarrage
   useEffect(() => {
-    const savedProjects = localStorage.getItem('readcast-projects');
-    if (savedProjects) {
-      try {
-        setProjects(JSON.parse(savedProjects));
-      } catch (error) {
-        console.error('Erreur lors du chargement des projets:', error);
-      }
-    }
+    loadProjects();
   }, []);
 
-  // Sauvegarder les projets dans le localStorage à chaque modification
-  useEffect(() => {
-    localStorage.setItem('readcast-projects', JSON.stringify(projects));
-  }, [projects]);
-
-  const handleExtractionComplete = (documentInfo) => {
-    // Créer un nouveau projet
-    const newProject = {
-      id: Date.now().toString(),
-      title: documentInfo.title,
-      pages: documentInfo.pages,
-      wordCount: documentInfo.wordCount,
-      language: documentInfo.language,
-      fileSize: Math.floor(Math.random() * 5000000) + 1000000, // 1-6 MB
-      status: 'processing',
-      createdAt: new Date().toISOString(),
-      extractedAt: documentInfo.extractedAt,
-      audioUrl: null,
-      audioDuration: 0
-    };
-
-    setProjects(prev => [newProject, ...prev]);
-    setCurrentProject(newProject);
-
-    // Simuler la conversion audio
-    setTimeout(() => {
-      completeAudioConversion(newProject.id);
-    }, 3000);
+  const loadProjects = () => {
+    const savedProjects = projectsAPI.getProjects();
+    setProjects(savedProjects);
   };
 
-  const completeAudioConversion = (projectId) => {
-    setProjects(prev => prev.map(project => {
-      if (project.id === projectId) {
-        return {
-          ...project,
-          status: 'completed',
-          audioUrl: `https://example.com/audio/${projectId}.mp3`, // URL simulée
-          audioDuration: Math.floor(Math.random() * 1800) + 300 // 5-35 minutes
-        };
-      }
-      return project;
-    }));
+  const handleFileSelected = (project) => {
+    setCurrentProject(project);
+  };
+
+  const handleExtractionComplete = (documentInfo) => {
+    // Le projet est déjà créé et sauvegardé par PDFExtractor
+    // On recharge juste la liste
+    loadProjects();
+    setCurrentProject(null);
   };
 
   const handleProjectSelect = (project) => {
@@ -76,7 +44,8 @@ const ProjectManager = () => {
   };
 
   const handleProjectDelete = (projectId) => {
-    setProjects(prev => prev.filter(project => project.id !== projectId));
+    projectsAPI.deleteProject(projectId);
+    loadProjects();
     
     // Si le projet supprimé était en cours d'écoute, arrêter l'audio
     if (currentProject?.id === projectId) {
@@ -101,53 +70,13 @@ const ProjectManager = () => {
     console.log('Navigation audio vers:', time);
   };
 
-  // Données de démonstration pour les projets existants
-  useEffect(() => {
-    if (projects.length === 0) {
-      const demoProjects = [
-        {
-          id: 'demo-1',
-          title: 'Rapport Annuel 2024',
-          pages: 45,
-          wordCount: 12500,
-          language: 'fr',
-          fileSize: 2500000,
-          status: 'completed',
-          createdAt: new Date(Date.now() - 86400000).toISOString(), // 1 jour ago
-          extractedAt: new Date(Date.now() - 86400000).toISOString(),
-          audioUrl: 'https://example.com/audio/demo-1.mp3',
-          audioDuration: 1420
-        },
-        {
-          id: 'demo-2',
-          title: 'Guide Utilisateur API',
-          pages: 23,
-          wordCount: 6800,
-          language: 'en',
-          fileSize: 1800000,
-          status: 'completed',
-          createdAt: new Date(Date.now() - 172800000).toISOString(), // 2 jours ago
-          extractedAt: new Date(Date.now() - 172800000).toISOString(),
-          audioUrl: 'https://example.com/audio/demo-2.mp3',
-          audioDuration: 890
-        },
-        {
-          id: 'demo-3',
-          title: 'Manuel de Formation',
-          pages: 67,
-          wordCount: 18900,
-          language: 'fr',
-          fileSize: 4200000,
-          status: 'completed',
-          createdAt: new Date(Date.now() - 259200000).toISOString(), // 3 jours ago
-          extractedAt: new Date(Date.now() - 259200000).toISOString(),
-          audioUrl: 'https://example.com/audio/demo-3.mp3',
-          audioDuration: 2100
-        }
-      ];
-      setProjects(demoProjects);
-    }
-  }, [projects.length]);
+  const startNewProject = () => {
+    setCurrentProject({ id: 'new', title: 'Nouveau Document' });
+  };
+
+  const cancelProject = () => {
+    setCurrentProject(null);
+  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
@@ -179,11 +108,35 @@ const ProjectManager = () => {
         <div className="space-y-6">
           {/* Zone de téléchargement et extraction */}
           {currentProject ? (
-            <PDFExtractor
-              file={{ name: currentProject.title + '.pdf' }}
-              onExtractionComplete={handleExtractionComplete}
-              onError={(error) => console.error('Erreur d\'extraction:', error)}
-            />
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-semibold text-gray-900">
+                  Nouveau Projet : {currentProject.title}
+                </h2>
+                <button
+                  onClick={cancelProject}
+                  className="px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  Annuler
+                </button>
+              </div>
+              
+              {currentProject.originalFile ? (
+                <PDFExtractor
+                  file={currentProject.originalFile}
+                  onExtractionComplete={handleExtractionComplete}
+                  onError={(error) => {
+                    console.error('Erreur d\'extraction:', error);
+                    setCurrentProject(null);
+                  }}
+                />
+              ) : (
+                <FileSelector
+                  onFileSelected={handleFileSelected}
+                  onCancel={cancelProject}
+                />
+              )}
+            </div>
           ) : (
             <div className="bg-white rounded-2xl p-8 shadow-lg border border-gray-200 text-center">
               <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -198,7 +151,7 @@ const ProjectManager = () => {
                 Téléchargez un PDF pour commencer la conversion vers audio
               </p>
               <button
-                onClick={() => setCurrentProject({ id: 'new', title: 'Nouveau Document' })}
+                onClick={startNewProject}
                 className="px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
               >
                 Commencer
@@ -217,19 +170,27 @@ const ProjectManager = () => {
                       <div className="flex-1">
                         <h3 className="font-medium text-gray-900">{project.title}</h3>
                         <p className="text-sm text-gray-600">
-                          {project.pages} pages • {project.wordCount.toLocaleString()} mots
+                          {project.pages} pages • {project.wordCount?.toLocaleString() || 'N/A'} mots
                         </p>
+                        {project.jobId && (
+                          <p className="text-xs text-gray-500 mt-1">
+                            Job ID: {project.jobId}
+                          </p>
+                        )}
                       </div>
                       <div className="flex items-center gap-2">
                         <span className={`px-2 py-1 text-xs font-medium rounded-full ${
                           project.status === 'completed' ? 'bg-green-100 text-green-800' :
                           project.status === 'processing' ? 'bg-blue-100 text-blue-800' :
+                          project.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
                           'bg-gray-100 text-gray-800'
                         }`}>
                           {project.status === 'completed' ? 'Terminé' : 
-                           project.status === 'processing' ? 'En cours' : 'Échoué'}
+                           project.status === 'processing' ? 'En cours' : 
+                           project.status === 'pending' ? 'En attente' :
+                           'Échoué'}
                         </span>
-                        {project.status === 'completed' && (
+                        {project.status === 'completed' && project.audioUrl && (
                           <button
                             onClick={() => handleProjectSelect(project)}
                             className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
@@ -245,6 +206,17 @@ const ProjectManager = () => {
                   </div>
                 ))}
               </div>
+              
+              {projects.length > 3 && (
+                <div className="text-center mt-4">
+                  <button
+                    onClick={() => setShowHistory(true)}
+                    className="text-blue-600 hover:text-blue-700 font-medium"
+                  >
+                    Voir tous les projets ({projects.length})
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
