@@ -105,47 +105,145 @@ class ApiService {
     return () => eventSource.close();
   }
 
-  // Upload de fichier avec progression
-  async uploadFileWithProgress(file, onProgress) {
-    return new Promise((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
+  // Upload de fichier avec progression et conversion
+  async uploadFileWithProgress(file, voice = null, language = 'en', onProgress, onStatusUpdate) {
+    try {
+      // Étape 1: Créer le job
+      onStatusUpdate('Creating conversion job...', 10);
+      const job = await this.createJob(file, voice, language);
       
-      // Gérer la progression
-      xhr.upload.addEventListener('progress', (event) => {
-        if (event.lengthComputable) {
-          const percentComplete = (event.loaded / event.total) * 100;
-          onProgress(percentComplete);
-        }
-      });
-
-      // Gérer la réponse
-      xhr.addEventListener('load', () => {
-        if (xhr.status >= 200 && xhr.status < 300) {
-          try {
-            const response = JSON.parse(xhr.responseText);
-            resolve(response);
-          } catch (error) {
-            reject(new Error('Invalid JSON response'));
+      onStatusUpdate('File uploaded successfully!', 30);
+      onProgress(30);
+      
+      // Étape 2: Écouter les événements du job
+      return new Promise((resolve, reject) => {
+        let isCompleted = false;
+        
+        const stopListening = this.listenToJobEvents(
+          job.id,
+          (data) => {
+            // Mise à jour du statut
+            if (data.status === 'processing') {
+              onStatusUpdate('Converting PDF to audio...', 60);
+              onProgress(60);
+            } else if (data.status === 'done') {
+              onStatusUpdate('Conversion completed!', 100);
+              onProgress(100);
+              if (!isCompleted) {
+                isCompleted = true;
+                resolve({
+                  jobId: job.id,
+                  status: 'done',
+                  mp3Url: data.mp3,
+                  m4bUrl: data.m4b,
+                  filename: file.name
+                });
+              }
+            } else if (data.status === 'error') {
+              onStatusUpdate('Conversion failed!', 0);
+              onProgress(0);
+              if (!isCompleted) {
+                isCompleted = true;
+                reject(new Error(data.error || 'Conversion failed'));
+              }
+            }
+          },
+          (error) => {
+            onStatusUpdate('Connection error!', 0);
+            onProgress(0);
+            if (!isCompleted) {
+              isCompleted = true;
+              reject(error);
+            }
+          },
+          (data) => {
+            // Job terminé
+            if (!isCompleted) {
+              isCompleted = true;
+              if (data.status === 'done') {
+                resolve({
+                  jobId: job.id,
+                  status: 'done',
+                  mp3Url: data.mp3,
+                  m4bUrl: data.m4b,
+                  filename: file.name
+                });
+              } else {
+                reject(new Error(data.error || 'Conversion failed'));
+              }
+            }
           }
-        } else {
-          reject(new Error(`Upload failed with status: ${xhr.status}`));
-        }
+        );
+
+        // Timeout de sécurité
+        setTimeout(() => {
+          if (!isCompleted) {
+            isCompleted = true;
+            stopListening();
+            reject(new Error('Conversion timeout'));
+          }
+        }, 300000); // 5 minutes
       });
+      
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  }
 
-      // Gérer les erreurs
-      xhr.addEventListener('error', () => {
-        reject(new Error('Network error during upload'));
-      });
+  // Télécharger un fichier MP3
+  async downloadMp3(url, filename) {
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Download failed: ${response.status}`);
+      }
+      
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      
+      const a = document.createElement('a');
+      a.href = downloadUrl;
+      a.download = filename.replace('.pdf', '.mp3');
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      
+      window.URL.revokeObjectURL(downloadUrl);
+      
+      return true;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  }
 
-      // Préparer et envoyer
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('voice', API_CONFIG.VOICES.default);
-      formData.append('lang', 'en');
-
-      xhr.open('POST', buildApiUrl(API_CONFIG.ENDPOINTS.JOBS));
-      xhr.send(formData);
-    });
+  // Lire un fichier MP3 (prévisualisation)
+  async playMp3(url) {
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Audio fetch failed: ${response.status}`);
+      }
+      
+      const blob = await response.blob();
+      const audioUrl = window.URL.createObjectURL(blob);
+      
+      const audio = new Audio(audioUrl);
+      audio.volume = 0.7;
+      
+      // Nettoyer l'URL après la lecture
+      audio.onended = () => {
+        window.URL.revokeObjectURL(audioUrl);
+      };
+      
+      audio.onerror = () => {
+        window.URL.revokeObjectURL(audioUrl);
+        throw new Error('Audio playback failed');
+      };
+      
+      return audio;
+    } catch (error) {
+      throw handleApiError(error);
+    }
   }
 
   // Retry automatique avec backoff exponentiel
