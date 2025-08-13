@@ -1,161 +1,104 @@
-import React, { useState, useCallback, useEffect } from 'react';
-import apiService from '../services/api.js';
+import React, { useState, useEffect } from 'react';
+import { useTranslation } from '../hooks/useTranslation';
+import { apiService } from '../services/api';
 
 const HeroSection = () => {
-  const [file, setFile] = useState(null);
-  const [isDragOver, setIsDragOver] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
+  const { t } = useTranslation();
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [currentText, setCurrentText] = useState(0);
   const [connectionStatus, setConnectionStatus] = useState('checking');
-  const [conversionStatus, setConversionStatus] = useState('');
+  const [conversionStatus, setConversionStatus] = useState('idle');
   const [conversionResult, setConversionResult] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [selectedVoice, setSelectedVoice] = useState('Rachel');
   const [selectedLanguage, setSelectedLanguage] = useState('en');
   const [showResults, setShowResults] = useState(false);
 
-  const texts = [
-    "The world's most trusted PDF to audio converter",
-    "Transform any document into crystal-clear audio",
-    "AI-powered voice synthesis that sounds human"
-  ];
-
   useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentText((prev) => (prev + 1) % texts.length);
-    }, 3000);
-    return () => clearInterval(interval);
-  }, [texts.length]);
-
-  // Vérifier la connexion au backend
-  useEffect(() => {
-    const checkConnection = async () => {
-      try {
-        const result = await apiService.testConnection();
-        setConnectionStatus(result.connected ? 'connected' : 'disconnected');
-      } catch (error) {
-        setConnectionStatus('disconnected');
-      }
-    };
-    
-    checkConnection();
+    testConnection();
   }, []);
 
-  const handleFileChange = (event) => {
-    const selectedFile = event.target.files[0];
-    if (selectedFile && selectedFile.type === 'application/pdf') {
-      setFile(selectedFile);
-      handleFileUpload(selectedFile);
+  const testConnection = async () => {
+    try {
+      const isConnected = await apiService.testConnection();
+      setConnectionStatus(isConnected ? 'connected' : 'disconnected');
+    } catch (error) {
+      setConnectionStatus('disconnected');
     }
   };
 
   const handleFileUpload = async (file) => {
-    setIsUploading(true);
-    setUploadProgress(0);
-    setConversionStatus('');
-    setConversionResult(null);
-    setShowResults(false);
-    
+    if (!file) return;
+
     try {
-      // Simuler la conversion pour le moment (car le backend n'est pas encore déployé)
-      setConversionStatus('Creating conversion job...');
-      setUploadProgress(10);
-      
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setConversionStatus('File uploaded successfully!');
-      setUploadProgress(30);
-      
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setConversionStatus('Converting PDF to audio...');
-      setUploadProgress(60);
-      
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      setConversionStatus('Conversion completed!');
-      setUploadProgress(100);
-      
-      // Simuler le résultat de conversion
-      const mockResult = {
-        jobId: 'mock-job-123',
-        status: 'done',
-        mp3Url: 'https://example.com/mock-audio.mp3',
-        m4bUrl: 'https://example.com/mock-audiobook.m4b',
-        filename: file.name
-      };
-      
-      setConversionResult(mockResult);
-      setShowResults(true);
-      setIsUploading(false);
-      
-    } catch (error) {
-      console.error('Upload/Conversion error:', error);
-      setIsUploading(false);
+      setConversionStatus('uploading');
       setUploadProgress(0);
-      setConversionStatus(`Error: ${error.message}`);
+      setShowResults(false);
+
+      const result = await apiService.uploadFileWithProgress(file, selectedVoice, selectedLanguage, (progress) => {
+        setUploadProgress(progress);
+      });
+
+      if (result.success) {
+        setConversionResult(result);
+        setConversionStatus('completed');
+        setShowResults(true);
+      } else {
+        setConversionStatus('error');
+        alert('Error during conversion: ' + result.error);
+      }
+    } catch (error) {
+      setConversionStatus('error');
+      alert('Upload failed: ' + error.message);
     }
   };
 
-  const handleDragOver = useCallback((e) => {
-    e.preventDefault();
-    setIsDragOver(true);
-  }, []);
-
-  const handleDragLeave = useCallback((e) => {
-    e.preventDefault();
-    setIsDragOver(false);
-  }, []);
-
-  const handleDrop = useCallback((e) => {
-    e.preventDefault();
-    setIsDragOver(false);
-    
-    const droppedFile = e.dataTransfer.files[0];
-    if (droppedFile && droppedFile.type === 'application/pdf') {
-      setFile(droppedFile);
-      handleFileUpload(droppedFile);
-    }
-  }, []);
-
   const handlePlayAudio = async () => {
-    if (!conversionResult?.mp3Url) return;
-    
+    if (!conversionResult?.audioUrl) return;
+
     try {
       setIsPlaying(true);
-      // Simuler la lecture audio
-      await new Promise(resolve => setTimeout(resolve, 3000));
-      setIsPlaying(false);
-      alert('Audio playback simulation completed!');
+      await apiService.playMp3(conversionResult.audioUrl);
     } catch (error) {
-      console.error('Playback error:', error);
+      alert('Error playing audio: ' + error.message);
+    } finally {
       setIsPlaying(false);
     }
   };
 
   const handleDownloadMp3 = async () => {
-    if (!conversionResult?.mp3Url) return;
-    
+    if (!conversionResult?.audioUrl) return;
+
     try {
-      // Simuler le téléchargement
-      const link = document.createElement('a');
-      link.href = 'data:text/plain;charset=utf-8,' + encodeURIComponent('Mock MP3 file content');
-      link.download = conversionResult.filename.replace('.pdf', '.mp3');
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-      alert('MP3 download simulation completed!');
+      await apiService.downloadMp3(conversionResult.audioUrl, conversionResult.filename);
     } catch (error) {
-      console.error('Download error:', error);
+      alert('Error downloading audio: ' + error.message);
     }
   };
 
   const resetConversion = () => {
-    setFile(null);
+    setConversionStatus('idle');
     setConversionResult(null);
-    setConversionStatus('');
-    setUploadProgress(0);
-    setIsUploading(false);
     setShowResults(false);
+    setUploadProgress(0);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (file && file.type === 'application/pdf') {
+      handleFileUpload(file);
+    }
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+  };
+
+  const handleFileInput = (e) => {
+    const file = e.target.files[0];
+    if (file && file.type === 'application/pdf') {
+      handleFileUpload(file);
+    }
   };
 
   return (
@@ -201,19 +144,18 @@ const HeroSection = () => {
         {/* Animated Badge */}
         <div className="inline-flex items-center px-6 py-3 rounded-full bg-blue-100 text-blue-800 font-semibold text-sm mb-8 animate-fade-in-up">
           <span className="w-2 h-2 bg-blue-600 rounded-full mr-3 animate-pulse"></span>
-          🚀 Transformez vos PDFs en audio en quelques secondes
+          {t('hero.badge')}
         </div>
 
         {/* Main Heading */}
         <h1 className="text-5xl md:text-7xl font-bold text-gray-900 mb-8 animate-fade-in-up" style={{ animationDelay: '200ms' }}>
-          <span className="block">Vos Documents</span>
-          <span className="block text-blue-600">Prennent Vie</span>
+          <span className="block">{t('hero.title.line1')}</span>
+          <span className="block text-blue-600">{t('hero.title.line2')}</span>
         </h1>
 
         {/* Subheading */}
         <p className="text-xl md:text-2xl text-gray-700 mb-12 max-w-4xl mx-auto animate-fade-in-up" style={{ animationDelay: '400ms' }}>
-          Convertissez instantanément vos PDFs en audio naturel avec notre IA avancée. 
-          Écoutez vos documents partout, tout le temps.
+          {t('hero.subtitle')}
         </p>
         
         {/* Voice and Language Selection */}
@@ -382,10 +324,9 @@ const HeroSection = () => {
                 <input 
                   type="file" 
                   accept=".pdf"
-                  onChange={handleFileChange}
+                  onChange={handleFileInput}
                   className="hidden"
                   id="pdf-upload"
-                  disabled={isUploading}
                 />
                 
                 {/* Upload Button */}

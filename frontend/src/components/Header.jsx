@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from '../hooks/useTranslation';
 
 const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const { currentLanguage, setLanguage, t } = useTranslation();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -36,6 +38,16 @@ const Header = () => {
     // Ici vous pourriez rediriger vers /register ou ouvrir un modal
   };
 
+  const handleLanguageChange = (language) => {
+    setLanguage(language);
+  };
+
+  const languageOptions = [
+    { code: 'en', name: '🇺🇸 EN', flag: '🇺🇸' },
+    { code: 'fr', name: '🇫🇷 FR', flag: '🇫🇷' },
+    { code: 'es', name: '🇪🇸 ES', flag: '🇪🇸' }
+  ];
+
   return (
     <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
       isScrolled 
@@ -66,30 +78,36 @@ const Header = () => {
               onClick={() => scrollToSection('features')}
               className="relative group text-gray-700 hover:text-gray-900 font-medium transition-colors duration-200"
             >
-              Features
+              {t('nav.features')}
               <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-blue-600 group-hover:w-full transition-all duration-300"></span>
             </button>
             <button 
               onClick={() => scrollToSection('pricing')}
               className="relative group text-gray-700 hover:text-gray-900 font-medium transition-colors duration-200"
             >
-              Pricing
+              {t('nav.pricing')}
               <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-blue-600 group-hover:w-full transition-all duration-300"></span>
             </button>
             <button 
               onClick={() => scrollToSection('about')}
               className="relative group text-gray-700 hover:text-gray-900 font-medium transition-colors duration-200"
             >
-              About
+              {t('nav.about')}
               <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-blue-600 group-hover:w-full transition-all duration-300"></span>
             </button>
             
             {/* Language Selector */}
             <div className="relative group">
-              <select className="appearance-none bg-transparent border-none text-gray-700 font-medium cursor-pointer pr-8 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg px-3 py-1">
-                <option>🇺🇸 EN</option>
-                <option>🇫🇷 FR</option>
-                <option>🇪🇸 ES</option>
+              <select 
+                value={currentLanguage}
+                onChange={(e) => handleLanguageChange(e.target.value)}
+                className="appearance-none bg-transparent border-none text-gray-700 font-medium cursor-pointer pr-8 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg px-3 py-1"
+              >
+                {languageOptions.map((lang) => (
+                  <option key={lang.code} value={lang.code}>
+                    {lang.name}
+                  </option>
+                ))}
               </select>
               <div className="absolute right-0 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors duration-200">
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -104,13 +122,13 @@ const Header = () => {
                 onClick={handleLogin}
                 className="text-gray-700 hover:text-gray-900 font-medium transition-colors duration-200 px-4 py-2 rounded-lg hover:bg-gray-100"
               >
-                Sign In
+                {t('nav.signIn')}
               </button>
               <button 
                 onClick={handleRegister}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300"
               >
-                Get Started
+                {t('nav.getStarted')}
               </button>
             </div>
           </nav>
@@ -141,32 +159,49 @@ const Header = () => {
                 onClick={() => scrollToSection('features')}
                 className="block w-full text-left px-3 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors duration-200"
               >
-                Features
+                {t('nav.features')}
               </button>
               <button 
                 onClick={() => scrollToSection('pricing')}
                 className="block w-full text-left px-3 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors duration-200"
               >
-                Pricing
+                {t('nav.pricing')}
               </button>
               <button 
                 onClick={() => scrollToSection('about')}
                 className="block w-full text-left px-3 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors duration-200"
               >
-                About
+                {t('nav.about')}
               </button>
+              
+              {/* Language Selector Mobile */}
+              <div className="px-3 py-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t('nav.language')}</label>
+                <select 
+                  value={currentLanguage}
+                  onChange={(e) => handleLanguageChange(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  {languageOptions.map((lang) => (
+                    <option key={lang.code} value={lang.code}>
+                      {lang.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
               <div className="border-t border-gray-200 my-2"></div>
               <button 
                 onClick={handleLogin}
                 className="block w-full text-left px-3 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors duration-200"
               >
-                Sign In
+                {t('nav.signIn')}
               </button>
               <button 
                 onClick={handleRegister}
-                className="block w-full text-left px-3 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg font-medium"
+                className="block w-full text-left px-3 py-2 bg-blue-600 text-white rounded-lg font-medium"
               >
-                Get Started
+                {t('nav.getStarted')}
               </button>
             </div>
           </div>
