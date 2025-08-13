@@ -12,6 +12,9 @@ const HeroSection = () => {
   const [selectedVoice, setSelectedVoice] = useState('Rachel');
   const [selectedLanguage, setSelectedLanguage] = useState('en');
   const [showResults, setShowResults] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [file, setFile] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
     testConnection();
@@ -30,6 +33,7 @@ const HeroSection = () => {
     if (!file) return;
 
     try {
+      setIsUploading(true);
       setConversionStatus('uploading');
       setUploadProgress(0);
       setShowResults(false);
@@ -49,6 +53,8 @@ const HeroSection = () => {
     } catch (error) {
       setConversionStatus('error');
       alert('Upload failed: ' + error.message);
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -80,23 +86,34 @@ const HeroSection = () => {
     setConversionResult(null);
     setShowResults(false);
     setUploadProgress(0);
+    setFile(null);
+    setIsUploading(false);
   };
 
   const handleDrop = (e) => {
     e.preventDefault();
+    setIsDragOver(false);
     const file = e.dataTransfer.files[0];
     if (file && file.type === 'application/pdf') {
+      setFile(file);
       handleFileUpload(file);
     }
   };
 
   const handleDragOver = (e) => {
     e.preventDefault();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    setIsDragOver(false);
   };
 
   const handleFileInput = (e) => {
     const file = e.target.files[0];
     if (file && file.type === 'application/pdf') {
+      setFile(file);
       handleFileUpload(file);
     }
   };
@@ -311,11 +328,16 @@ const HeroSection = () => {
         {/* Upload Area ou Résultats */}
         {!showResults ? (
           <div className={`relative max-w-2xl mx-auto mb-12 animate-fade-in-up`} style={{ animationDelay: '700ms' }}>
-            <div className={`relative bg-white rounded-3xl p-12 shadow-2xl border-2 transition-all duration-500 ${
-              isDragOver 
-                ? 'border-blue-400 scale-105 shadow-blue-200/50' 
-                : 'border-gray-200 hover:border-blue-300'
-            }`}>
+            <div 
+              className={`relative bg-white rounded-3xl p-12 shadow-2xl border-2 transition-all duration-500 ${
+                isDragOver 
+                  ? 'border-blue-400 scale-105 shadow-blue-200/50' 
+                  : 'border-gray-200 hover:border-blue-300'
+              }`}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+            >
               {/* Glow Effect */}
               <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5 rounded-3xl blur-xl opacity-0 hover:opacity-100 transition-opacity duration-500"></div>
               
