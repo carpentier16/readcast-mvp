@@ -11,6 +11,12 @@ export { default as UploadSection } from './UploadSection';
 export { default as PricingSection } from './PricingSection';
 export { default as AboutSection } from './AboutSection';
 
+// Nouveaux composants pour la gestion des projets
+export { default as PDFExtractor } from './PDFExtractor';
+export { default as ProjectHistory } from './ProjectHistory';
+export { default as AudioPlayer } from './AudioPlayer';
+export { default as ProjectManager } from './ProjectManager';
+
 // Configuration et Services
 export { default as API_CONFIG } from '../config/api.js';
 export { default as apiService } from '../services/api.js';

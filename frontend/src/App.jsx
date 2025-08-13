@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import './index.css';
 import { LanguageProvider } from './hooks/useTranslation.jsx';
 import {
@@ -9,21 +9,65 @@ import {
   HowItWorksSection,
   PricingSection,
   AboutSection,
-  Footer
+  Footer,
+  ProjectManager
 } from './components';
 
 function App() {
+  const [currentView, setCurrentView] = useState('main'); // 'main' ou 'projects'
+
+  const renderMainView = () => (
+    <>
+      <Header />
+      <HeroSection />
+      <FeaturesSection />
+      <VoiceSection />
+      <HowItWorksSection />
+      <PricingSection />
+      <AboutSection />
+      <Footer />
+    </>
+  );
+
+  const renderProjectsView = () => (
+    <>
+      <Header />
+      <ProjectManager />
+      <Footer />
+    </>
+  );
+
   return (
     <LanguageProvider>
       <div className="App">
-        <Header />
-        <HeroSection />
-        <FeaturesSection />
-        <VoiceSection />
-        <HowItWorksSection />
-        <PricingSection />
-        <AboutSection />
-        <Footer />
+        {/* Navigation entre les vues */}
+        <div className="fixed top-4 right-4 z-50">
+          <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-2">
+            <button
+              onClick={() => setCurrentView('main')}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                currentView === 'main'
+                  ? 'bg-blue-600 text-white'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+              }`}
+            >
+              Accueil
+            </button>
+            <button
+              onClick={() => setCurrentView('projects')}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                currentView === 'projects'
+                  ? 'bg-blue-600 text-white'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+              }`}
+            >
+              Projets
+            </button>
+          </div>
+        </div>
+
+        {/* Contenu principal */}
+        {currentView === 'main' ? renderMainView() : renderProjectsView()}
       </div>
     </LanguageProvider>
   );
