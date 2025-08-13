@@ -13,6 +13,7 @@ const HeroSection = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [selectedVoice, setSelectedVoice] = useState('Rachel');
   const [selectedLanguage, setSelectedLanguage] = useState('en');
+  const [showResults, setShowResults] = useState(false);
 
   const texts = [
     "The world's most trusted PDF to audio converter",
@@ -54,26 +55,37 @@ const HeroSection = () => {
     setUploadProgress(0);
     setConversionStatus('');
     setConversionResult(null);
+    setShowResults(false);
     
     try {
-      // Utiliser le service API avec progression et conversion
-      const result = await apiService.uploadFileWithProgress(
-        file, 
-        selectedVoice, 
-        selectedLanguage,
-        (progress) => {
-          setUploadProgress(progress);
-        },
-        (status, progress) => {
-          setConversionStatus(status);
-          setUploadProgress(progress);
-        }
-      );
+      // Simuler la conversion pour le moment (car le backend n'est pas encore déployé)
+      setConversionStatus('Creating conversion job...');
+      setUploadProgress(10);
       
-      // Conversion réussie
-      setConversionResult(result);
-      setIsUploading(false);
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setConversionStatus('File uploaded successfully!');
+      setUploadProgress(30);
+      
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setConversionStatus('Converting PDF to audio...');
+      setUploadProgress(60);
+      
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      setConversionStatus('Conversion completed!');
       setUploadProgress(100);
+      
+      // Simuler le résultat de conversion
+      const mockResult = {
+        jobId: 'mock-job-123',
+        status: 'done',
+        mp3Url: 'https://example.com/mock-audio.mp3',
+        m4bUrl: 'https://example.com/mock-audiobook.m4b',
+        filename: file.name
+      };
+      
+      setConversionResult(mockResult);
+      setShowResults(true);
+      setIsUploading(false);
       
     } catch (error) {
       console.error('Upload/Conversion error:', error);
@@ -109,12 +121,10 @@ const HeroSection = () => {
     
     try {
       setIsPlaying(true);
-      const audio = await apiService.playMp3(conversionResult.mp3Url);
-      
-      audio.onended = () => setIsPlaying(false);
-      audio.onerror = () => setIsPlaying(false);
-      
-      await audio.play();
+      // Simuler la lecture audio
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      setIsPlaying(false);
+      alert('Audio playback simulation completed!');
     } catch (error) {
       console.error('Playback error:', error);
       setIsPlaying(false);
@@ -125,7 +135,15 @@ const HeroSection = () => {
     if (!conversionResult?.mp3Url) return;
     
     try {
-      await apiService.downloadMp3(conversionResult.mp3Url, conversionResult.filename);
+      // Simuler le téléchargement
+      const link = document.createElement('a');
+      link.href = 'data:text/plain;charset=utf-8,' + encodeURIComponent('Mock MP3 file content');
+      link.download = conversionResult.filename.replace('.pdf', '.mp3');
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      alert('MP3 download simulation completed!');
     } catch (error) {
       console.error('Download error:', error);
     }
@@ -137,6 +155,7 @@ const HeroSection = () => {
     setConversionStatus('');
     setUploadProgress(0);
     setIsUploading(false);
+    setShowResults(false);
   };
 
   return (
@@ -225,7 +244,7 @@ const HeroSection = () => {
         </p>
         
         {/* Voice and Language Selection */}
-        {!conversionResult && (
+        {!showResults && (
           <div className="max-w-2xl mx-auto mb-8 animate-fade-in-up" style={{ animationDelay: '600ms' }}>
             <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-200">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -264,7 +283,7 @@ const HeroSection = () => {
         )}
         
         {/* Upload Area ou Résultats */}
-        {!conversionResult ? (
+        {!showResults ? (
           <div className={`relative max-w-2xl mx-auto mb-12 animate-fade-in-up`} style={{ animationDelay: '700ms' }}>
             <div className={`relative bg-white rounded-3xl p-12 shadow-2xl border-2 transition-all duration-500 ${
               isDragOver 
@@ -394,7 +413,7 @@ const HeroSection = () => {
               <div className="space-y-4 mb-8">
                 <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                   <span className="font-medium text-gray-700">Original File:</span>
-                  <span className="text-gray-600">{conversionResult.filename}</span>
+                  <span className="text-gray-600">{conversionResult?.filename}</span>
                 </div>
                 <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                   <span className="font-medium text-gray-700">Voice Used:</span>
