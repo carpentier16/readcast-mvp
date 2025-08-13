@@ -1,6 +1,6 @@
 import React from 'react';
 import './index.css';
-import { LanguageProvider } from './hooks/useTranslation';
+import { LanguageProvider } from './hooks/useTranslation.jsx';
 import {
   Header,
   HeroSection,

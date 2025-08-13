@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useTranslation } from '../hooks/useTranslation';
-import { apiService } from '../services/api';
+import { useTranslation } from '../hooks/useTranslation.jsx';
+import apiService from '../services/api';
 
 const HeroSection = () => {
   const { t } = useTranslation();

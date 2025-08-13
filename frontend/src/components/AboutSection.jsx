@@ -1,5 +1,5 @@
 import React from 'react';
-import { useTranslation } from '../hooks/useTranslation';
+import { useTranslation } from '../hooks/useTranslation.jsx';
 
 const AboutSection = () => {
   const { t } = useTranslation();

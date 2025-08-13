@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useTranslation } from '../hooks/useTranslation';
+import { useTranslation } from '../hooks/useTranslation.jsx';
 
 const HowItWorksSection = () => {
   const { t } = useTranslation();
