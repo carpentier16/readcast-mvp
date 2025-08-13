@@ -245,37 +245,148 @@ const HeroSection = () => {
         
         {/* Voice and Language Selection */}
         {!showResults && (
-          <div className="max-w-2xl mx-auto mb-8 animate-fade-in-up" style={{ animationDelay: '600ms' }}>
-            <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-200">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="max-w-4xl mx-auto mb-8 animate-fade-in-up" style={{ animationDelay: '600ms' }}>
+            <div className="bg-white rounded-2xl p-8 shadow-xl border border-gray-200">
+              <div className="text-center mb-6">
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">Customize Your Audio</h3>
+                <p className="text-gray-600">Choose the perfect voice and language for your document</p>
+              </div>
+              
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Voice Selection */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Voice</label>
-                  <select 
-                    value={selectedVoice}
-                    onChange={(e) => setSelectedVoice(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="Rachel">Rachel (Female)</option>
-                    <option value="Domi">Domi (Female)</option>
-                    <option value="Bella">Bella (Female)</option>
-                    <option value="Antoni">Antoni (Male)</option>
-                    <option value="Thiago">Thiago (Male)</option>
-                    <option value="Josh">Josh (Male)</option>
-                  </select>
+                  <label className="block text-sm font-medium text-gray-700 mb-4 text-center">Select Voice</label>
+                  <div className="grid grid-cols-2 gap-3">
+                    {[
+                      { id: 'Rachel', name: 'Rachel', gender: 'Female', accent: 'American', personality: 'Professional & Warm' },
+                      { id: 'Domi', name: 'Domi', gender: 'Female', accent: 'American', personality: 'Energetic & Friendly' },
+                      { id: 'Bella', name: 'Bella', gender: 'Female', accent: 'British', personality: 'Elegant & Clear' },
+                      { id: 'Antoni', name: 'Antoni', gender: 'Male', accent: 'American', personality: 'Confident & Authoritative' },
+                      { id: 'Thiago', name: 'Thiago', gender: 'Male', accent: 'Brazilian', personality: 'Warm & Engaging' },
+                      { id: 'Josh', name: 'Josh', gender: 'Male', accent: 'American', personality: 'Casual & Approachable' }
+                    ].map((voice) => (
+                      <div
+                        key={voice.id}
+                        onClick={() => setSelectedVoice(voice.id)}
+                        className={`relative cursor-pointer rounded-xl p-4 border-2 transition-all duration-300 ${
+                          selectedVoice === voice.id
+                            ? 'border-blue-500 bg-blue-50 shadow-lg'
+                            : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                        }`}
+                      >
+                        <div className="text-center">
+                          <div className={`w-12 h-12 rounded-full mx-auto mb-2 flex items-center justify-center ${
+                            selectedVoice === voice.id
+                              ? 'bg-blue-500 text-white'
+                              : 'bg-gray-100 text-gray-600'
+                          }`}>
+                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                            </svg>
+                          </div>
+                          <h4 className={`font-semibold text-sm ${
+                            selectedVoice === voice.id ? 'text-blue-700' : 'text-gray-900'
+                          }`}>
+                            {voice.name}
+                          </h4>
+                          <p className="text-xs text-gray-500">{voice.gender}</p>
+                          <p className="text-xs text-gray-400">{voice.accent}</p>
+                        </div>
+                        
+                        {/* Selection Indicator */}
+                        {selectedVoice === voice.id && (
+                          <div className="absolute top-2 right-2">
+                            <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
+                              <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  
+                  {/* Voice Preview */}
+                  <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">
+                          Selected: {selectedVoice}
+                        </p>
+                        <p className="text-xs text-gray-600">
+                          {[
+                            { id: 'Rachel', personality: 'Professional & Warm' },
+                            { id: 'Domi', personality: 'Energetic & Friendly' },
+                            { id: 'Bella', personality: 'Elegant & Clear' },
+                            { id: 'Antoni', personality: 'Confident & Authoritative' },
+                            { id: 'Thiago', personality: 'Warm & Engaging' },
+                            { id: 'Josh', personality: 'Casual & Approachable' }
+                          ].find(v => v.id === selectedVoice)?.personality}
+                        </p>
+                      </div>
+                      <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200">
+                        Preview Voice
+                      </button>
+                    </div>
+                  </div>
                 </div>
+
+                {/* Language Selection */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Language</label>
-                  <select 
-                    value={selectedLanguage}
-                    onChange={(e) => setSelectedLanguage(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="en">🇺🇸 English</option>
-                    <option value="fr">🇫🇷 Français</option>
-                    <option value="es">🇪🇸 Español</option>
-                    <option value="de">🇩🇪 Deutsch</option>
-                    <option value="it">🇮🇹 Italiano</option>
-                  </select>
+                  <label className="block text-sm font-medium text-gray-700 mb-4 text-center">Select Language</label>
+                  <div className="space-y-3">
+                    {[
+                      { code: 'en', name: 'English', flag: '🇺🇸', description: 'Perfect for international documents' },
+                      { code: 'fr', name: 'Français', flag: '🇫🇷', description: 'Ideal for French literature and business' },
+                      { code: 'es', name: 'Español', flag: '🇪🇸', description: 'Great for Spanish content and reports' },
+                      { code: 'de', name: 'Deutsch', flag: '🇩🇪', description: 'Excellent for German technical documents' },
+                      { code: 'it', name: 'Italiano', flag: '🇮🇹', description: 'Perfect for Italian culture and business' }
+                    ].map((lang) => (
+                      <div
+                        key={lang.code}
+                        onClick={() => setSelectedLanguage(lang.code)}
+                        className={`relative cursor-pointer rounded-xl p-4 border-2 transition-all duration-300 ${
+                          selectedLanguage === lang.code
+                            ? 'border-green-500 bg-green-50 shadow-lg'
+                            : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                        }`}
+                      >
+                        <div className="flex items-center space-x-4">
+                          <span className="text-2xl">{lang.flag}</span>
+                          <div className="flex-1">
+                            <h4 className={`font-semibold ${
+                              selectedLanguage === lang.code ? 'text-green-700' : 'text-gray-900'
+                            }`}>
+                              {lang.name}
+                            </h4>
+                            <p className="text-sm text-gray-600">{lang.description}</p>
+                          </div>
+                          
+                          {/* Selection Indicator */}
+                          {selectedLanguage === lang.code && (
+                            <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
+                              <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  {/* Language Info */}
+                  <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                    <div className="text-center">
+                      <p className="text-sm font-medium text-gray-900">
+                        Language: {selectedLanguage === 'en' ? 'English' : selectedLanguage === 'fr' ? 'Français' : selectedLanguage === 'es' ? 'Español' : selectedLanguage === 'de' ? 'Deutsch' : 'Italiano'}
+                      </p>
+                      <p className="text-xs text-gray-600 mt-1">
+                        AI will automatically detect and adapt to your document's language
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
