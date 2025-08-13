@@ -7,16 +7,140 @@
 }
 
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-  line-height: 1.6;
-  color: #333;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+  line-height: 1.5;
+  color: #374151;
+  background-color: #fff;
 }
 
-/* Animations personnalisées */
-@keyframes fadeInUp {
+/* Styles épurés et professionnels */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+/* Boutons épurés */
+button, .btn {
+  transition: all 0.2s ease;
+  font-weight: 500;
+}
+
+button:hover, .btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Cards avec bordures subtiles */
+.card {
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  transition: all 0.2s ease;
+}
+
+.card:hover {
+  border-color: #d1d5db;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+/* Navigation propre */
+nav a {
+  color: #6b7280;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+nav a:hover {
+  color: #111827;
+}
+
+/* Style pour les sections */
+section {
+  padding: 4rem 0;
+}
+
+/* Titres hiérarchisés */
+h1 {
+  font-weight: 700;
+  color: #111827;
+  line-height: 1.2;
+}
+
+h2 {
+  font-weight: 600;
+  color: #111827;
+  line-height: 1.3;
+}
+
+h3 {
+  font-weight: 600;
+  color: #111827;
+}
+
+/* Texte secondaire */
+.text-secondary {
+  color: #6b7280;
+}
+
+/* Zone d'upload épurée */
+.upload-zone {
+  border: 2px dashed #d1d5db;
+  border-radius: 12px;
+  background: #f9fafb;
+  transition: all 0.2s ease;
+}
+
+.upload-zone:hover {
+  border-color: #9ca3af;
+  background: #f3f4f6;
+}
+
+.upload-zone.active {
+  border-color: #3b82f6;
+  background: #eff6ff;
+}
+
+/* Icônes */
+.icon {
+  width: 24px;
+  height: 24px;
+  display: inline-block;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  section {
+    padding: 2rem 0;
+  }
+  
+  h1 {
+    font-size: 2.25rem;
+  }
+  
+  h2 {
+    font-size: 1.875rem;
+  }
+  
+  .container {
+    padding: 0 1rem;
+  }
+}
+
+/* États de focus accessibles */
+button:focus,
+input:focus,
+select:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* Animation subtile */
+@keyframes slideUp {
   from {
     opacity: 0;
-    transform: translateY(30px);
+    transform: translateY(20px);
   }
   to {
     opacity: 1;
@@ -24,43 +148,8 @@ body {
   }
 }
 
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
-}
-
-.animate-fadeInUp {
-  animation: fadeInUp 0.6s ease-out;
-}
-
-.animate-pulse {
-  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-/* Styles pour les boutons avec effets hover */
-button {
-  transition: all 0.3s ease;
-}
-
-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-}
-
-/* Style pour les cartes */
-.card {
-  transition: all 0.3s ease;
-  border-radius: 12px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-}
-
-.card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+.animate-slideUp {
+  animation: slideUp 0.4s ease-out;
 }
 
 /* Scroll smooth */
@@ -68,63 +157,57 @@ html {
   scroll-behavior: smooth;
 }
 
-/* Style pour les liens de navigation */
-nav a {
-  position: relative;
+/* Styles pour les badges de statut */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 500;
 }
 
-nav a::after {
-  content: '';
-  position: absolute;
-  width: 0;
-  height: 2px;
-  bottom: -4px;
-  left: 0;
-  background-color: currentColor;
-  transition: width 0.3s ease;
+.badge-success {
+  background-color: #dcfce7;
+  color: #166534;
 }
 
-nav a:hover::after {
-  width: 100%;
+.badge-warning {
+  background-color: #fef3c7;
+  color: #92400e;
 }
 
-/* Loading animation */
+/* Amélioration des inputs */
+input[type="file"] {
+  cursor: pointer;
+}
+
+select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 0.5rem center;
+  background-repeat: no-repeat;
+  background-size: 1.5em 1.5em;
+  padding-right: 2.5rem;
+}
+
+/* Loading state */
 .loading {
-  display: inline-block;
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.spinner {
+  border: 2px solid #f3f3f3;
+  border-top: 2px solid #3b82f6;
+  border-radius: 50%;
   width: 20px;
   height: 20px;
-  border: 3px solid rgba(255,255,255,.3);
-  border-radius: 50%;
-  border-top-color: #fff;
-  animation: spin 1s ease-in-out infinite;
+  animation: spin 1s linear infinite;
+  display: inline-block;
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-/* File upload hover effects */
-.file-upload-area {
-  transition: all 0.3s ease;
-}
-
-.file-upload-area:hover {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-}
-
-/* Responsive improvements */
-@media (max-width: 768px) {
-  .container {
-    padding-left: 1rem;
-    padding-right: 1rem;
-  }
-  
-  h1 {
-    font-size: 2rem;
-  }
-  
-  h2 {
-    font-size: 2.5rem;
-  }
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
