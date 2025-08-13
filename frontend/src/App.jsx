@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Header } from './components/Header';
-import { UploadSection } from './components/UploadSection';
-import { VoiceSection } from './components/VoiceSection';
-import { ProjectsSection } from './components/ProjectsSection';
-
+import UploadSection from './components/UploadSection';
+import VoiceSection from './components/VoiceSection';
+import ProjectsSection from './components/ProjectsSection';
 const API_BASE_URL = import.meta.env.VITE_API_BASE || 'http://localhost:8000';
 
 const App = () => {
