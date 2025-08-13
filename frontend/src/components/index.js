@@ -18,6 +18,11 @@ export { default as AudioPlayer } from './AudioPlayer';
 export { default as ProjectManager } from './ProjectManager';
 export { default as FileSelector } from './FileSelector';
 
+// Composants d'authentification
+export { default as LoginForm } from './auth/LoginForm';
+export { default as RegisterForm } from './auth/RegisterForm';
+export { default as AuthModal } from './auth/AuthModal';
+
 // Configuration et Services
 export { default as API_CONFIG } from '../config/api.js';
 export { default as apiService } from '../services/api.js';

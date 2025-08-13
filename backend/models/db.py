@@ -23,6 +23,7 @@ class Job(SQLModel, table=True):
     input_filename: str
     lang: Optional[str] = None
     voice: Optional[str] = None
+    user_id: Optional[str] = None  # ID de l'utilisateur propriétaire
 
     error: Optional[str] = None
     duration_sec: int = 0

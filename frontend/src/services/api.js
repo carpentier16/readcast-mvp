@@ -1,5 +1,6 @@
 // Services API pour la connexion avec le backend
 import { config, getApiUrl, devLog, errorLog } from '../config/environment.js';
+import authService from './auth.js';
 
 class APIError extends Error {
   constructor(message, status, details) {
@@ -10,8 +11,8 @@ class APIError extends Error {
   }
 }
 
-// Fonction utilitaire pour les appels API
-async function apiCall(endpoint, options = {}) {
+// Fonction utilitaire pour les appels API avec authentification automatique
+async function apiCall(endpoint, options = {}, requireAuth = false) {
   const url = getApiUrl(endpoint);
   
   const defaultOptions = {
@@ -21,10 +22,51 @@ async function apiCall(endpoint, options = {}) {
     },
   };
 
+  // Ajouter l'en-tête d'authentification si requis
+  if (requireAuth) {
+    const authHeader = authService.getAuthHeader();
+    if (authHeader.Authorization) {
+      defaultOptions.headers.Authorization = authHeader.Authorization;
+    } else {
+      throw new APIError('Authentification requise', 401, {});
+    }
+  }
+
   try {
     devLog(`API Call: ${options.method || 'GET'} ${url}`);
     
     const response = await fetch(url, { ...defaultOptions, ...options });
+    
+    // Si l'authentification a échoué, essayer de rafraîchir le token
+    if (response.status === 401 && requireAuth) {
+      devLog('Token expiré, tentative de rafraîchissement...');
+      const refreshResult = await authService.refreshAccessToken();
+      
+      if (refreshResult.success) {
+        // Réessayer l'appel avec le nouveau token
+        const newAuthHeader = authService.getAuthHeader();
+        defaultOptions.headers.Authorization = newAuthHeader.Authorization;
+        
+        const retryResponse = await fetch(url, { ...defaultOptions, ...options });
+        
+        if (!retryResponse.ok) {
+          const errorData = await retryResponse.json().catch(() => ({}));
+          throw new APIError(
+            errorData.detail || `HTTP ${retryResponse.status}`,
+            retryResponse.status,
+            errorData
+          );
+        }
+        
+        const data = await retryResponse.json();
+        devLog(`API Response (retry):`, data);
+        return data;
+      } else {
+        // Le rafraîchissement a échoué, déconnecter l'utilisateur
+        authService.clearAuth();
+        throw new APIError('Session expirée', 401, {});
+      }
+    }
     
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
@@ -51,7 +93,7 @@ async function apiCall(endpoint, options = {}) {
   }
 }
 
-// Service pour la gestion des jobs PDF
+// Service pour la gestion des jobs PDF (avec authentification)
 export const jobsAPI = {
   // Créer un nouveau job de conversion
   async createJob(file, voice, language) {
@@ -64,12 +106,12 @@ export const jobsAPI = {
       method: 'POST',
       body: formData,
       headers: {}, // Pas de Content-Type pour FormData
-    });
+    }, true); // Requiert l'authentification
   },
 
   // Récupérer les détails d'un job
   async getJob(jobId) {
-    return apiCall(`/api/jobs/${jobId}`);
+    return apiCall(`/api/jobs/${jobId}`, {}, true);
   },
 
   // Obtenir le statut en temps réel d'un job
@@ -77,7 +119,11 @@ export const jobsAPI = {
     const url = getApiUrl(`/api/jobs/${jobId}/events`);
     devLog(`Starting SSE connection to: ${url}`);
     
-    const eventSource = new EventSource(url);
+    // Ajouter le token d'authentification aux headers SSE
+    const token = authService.getAccessToken();
+    const eventSource = new EventSource(url, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {}
+    });
     
     eventSource.onmessage = (event) => {
       try {
@@ -102,9 +148,9 @@ export const jobsAPI = {
     };
   },
 
-  // Lister tous les jobs (si l'API le supporte)
+  // Lister tous les jobs de l'utilisateur
   async listJobs() {
-    return apiCall('/api/jobs');
+    return apiCall('/api/jobs', {}, true);
   },
 
   // Vérifier la santé de l'API
@@ -225,6 +271,12 @@ export const errorHandler = {
       switch (error.status) {
         case 400:
           userMessage = 'Données invalides. Vérifiez votre fichier PDF.';
+          break;
+        case 401:
+          userMessage = 'Session expirée. Veuillez vous reconnecter.';
+          break;
+        case 403:
+          userMessage = 'Accès non autorisé à cette ressource.';
           break;
         case 413:
           userMessage = 'Fichier trop volumineux. Taille maximum : 100 MB.';
