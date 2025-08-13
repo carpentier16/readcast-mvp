@@ -1,3 +1,5 @@
+import React from 'react';
+
 const VOICES = [
   { id: "Rachel", ui: "Rachel", sub: "Féminine • Chaleureuse" },
   { id: "Emma",   ui: "Emma",   sub: "Féminine • Narrative"  },
