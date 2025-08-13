@@ -1,5 +1,6 @@
 import { useState, useEffect, createContext, useContext } from 'react';
-import { translations } from '../locales/translations.js';
+import { navTranslations } from '../locales/translations-nav.js';
+import { heroTranslations } from '../locales/translations-hero.js';
 
 // Contexte pour la langue
 const LanguageContext = createContext();
@@ -23,26 +24,50 @@ export const useTranslation = () => {
 // Fonction de traduction
 const translate = (key, language) => {
   const keys = key.split('.');
-  let value = translations[language];
+  let value = null;
   
-  for (const k of keys) {
-    if (value && value[k] !== undefined) {
-      value = value[k];
-    } else {
-      // Fallback vers l'anglais si la traduction n'existe pas
-      let fallbackValue = translations.en;
-      for (const fallbackKey of keys) {
-        if (fallbackValue && fallbackValue[fallbackKey] !== undefined) {
-          fallbackValue = fallbackValue[fallbackKey];
-        } else {
-          return key; // Retourne la clé si aucune traduction n'est trouvée
-        }
+  // Essayer de trouver la traduction dans les fichiers séparés
+  if (keys[0] === 'nav') {
+    value = navTranslations[language];
+  } else if (keys[0] === 'hero') {
+    value = heroTranslations[language];
+  }
+  
+  if (value) {
+    for (const k of keys) {
+      if (value && value[k] !== undefined) {
+        value = value[k];
+      } else {
+        break;
       }
+    }
+    if (value && typeof value === 'string') {
+      return value;
+    }
+  }
+  
+  // Fallback vers l'anglais si la traduction n'existe pas
+  let fallbackValue = null;
+  if (keys[0] === 'nav') {
+    fallbackValue = navTranslations.en;
+  } else if (keys[0] === 'hero') {
+    fallbackValue = heroTranslations.en;
+  }
+  
+  if (fallbackValue) {
+    for (const k of keys) {
+      if (fallbackValue && fallbackValue[k] !== undefined) {
+        fallbackValue = fallbackValue[k];
+      } else {
+        break;
+      }
+    }
+    if (fallbackValue && typeof fallbackValue === 'string') {
       return fallbackValue;
     }
   }
   
-  return value || key;
+  return key; // Retourne la clé si aucune traduction n'est trouvée
 };
 
 // Provider du contexte de langue
