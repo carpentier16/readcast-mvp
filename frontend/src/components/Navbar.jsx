@@ -1,3 +1,5 @@
+import React from 'react';
+
 export default function Navbar() {
   return (
     <header className="sticky top-0 z-30 border-b border-white/10 bg-[rgb(var(--bg))]/80 backdrop-blur supports-[backdrop-filter]:bg-[rgb(var(--bg))]/60">
