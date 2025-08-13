@@ -174,10 +174,25 @@ const HowItWorksSection = () => {
               Join thousands of users who have already transformed their reading experience.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <button className="bg-white text-blue-600 hover:bg-gray-100 px-8 py-4 rounded-xl font-semibold text-lg transition-colors duration-200">
+              <button 
+                onClick={() => {
+                  // Rediriger vers la section hero pour commencer la conversion
+                  const heroSection = document.getElementById('hero');
+                  if (heroSection) {
+                    heroSection.scrollIntoView({ behavior: 'smooth' });
+                  }
+                }}
+                className="bg-white text-blue-600 hover:bg-gray-100 px-8 py-4 rounded-xl font-semibold text-lg transition-colors duration-200"
+              >
                 Start Converting Now
               </button>
-              <button className="border-2 border-white text-white hover:bg-white hover:text-blue-600 px-8 py-4 rounded-xl font-semibold text-lg transition-all duration-200">
+              <button 
+                onClick={() => {
+                  alert('Examples gallery coming soon!');
+                  // Ici vous pourriez ouvrir une galerie d'exemples
+                }}
+                className="border-2 border-white text-white hover:bg-white hover:text-blue-600 px-8 py-4 rounded-xl font-semibold text-lg transition-all duration-200"
+              >
                 View Examples
               </button>
             </div>

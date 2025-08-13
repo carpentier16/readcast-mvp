@@ -172,7 +172,13 @@ const FeaturesSection = () => {
               </div>
               <h4 className="text-lg font-semibold text-gray-900 mb-2">Voice Preview</h4>
               <p className="text-gray-600 mb-4">Listen to different AI voices</p>
-              <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors duration-200">
+              <button 
+                onClick={() => {
+                  alert('Voice preview functionality coming soon!');
+                  // Ici vous pourriez ouvrir un modal avec des échantillons de voix
+                }}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors duration-200"
+              >
                 Play Sample
               </button>
             </div>
@@ -186,7 +192,13 @@ const FeaturesSection = () => {
               </div>
               <h4 className="text-lg font-semibold text-gray-900 mb-2">Speed Test</h4>
               <p className="text-gray-600 mb-4">See conversion speed in action</p>
-              <button className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-medium transition-colors duration-200">
+              <button 
+                onClick={() => {
+                  alert('Speed test functionality coming soon!');
+                  // Ici vous pourriez lancer un test de vitesse réel
+                }}
+                className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-medium transition-colors duration-200"
+              >
                 Start Test
               </button>
             </div>
@@ -200,7 +212,13 @@ const FeaturesSection = () => {
               </div>
               <h4 className="text-lg font-semibold text-gray-900 mb-2">Quality Demo</h4>
               <p className="text-gray-600 mb-4">Compare before and after</p>
-              <button className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg font-medium transition-colors duration-200">
+              <button 
+                onClick={() => {
+                  alert('Quality demo functionality coming soon!');
+                  // Ici vous pourriez ouvrir un comparateur avant/après
+                }}
+                className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg font-medium transition-colors duration-200"
+              >
                 View Demo
               </button>
             </div>
@@ -217,10 +235,25 @@ const FeaturesSection = () => {
               Join thousands of users who have already discovered the power of AI-powered audio conversion.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <button className="bg-white text-blue-600 hover:bg-gray-100 px-8 py-4 rounded-xl font-semibold text-lg transition-colors duration-200">
+              <button 
+                onClick={() => {
+                  // Rediriger vers la section hero pour commencer la conversion
+                  const heroSection = document.getElementById('hero');
+                  if (heroSection) {
+                    heroSection.scrollIntoView({ behavior: 'smooth' });
+                  }
+                }}
+                className="bg-white text-blue-600 hover:bg-gray-100 px-8 py-4 rounded-xl font-semibold text-lg transition-colors duration-200"
+              >
                 Start Free Trial
               </button>
-              <button className="border-2 border-white text-white hover:bg-white hover:text-blue-600 px-8 py-4 rounded-xl font-semibold text-lg transition-all duration-200">
+              <button 
+                onClick={() => {
+                  alert('Demo video functionality coming soon!');
+                  // Ici vous pourriez ouvrir une vidéo de démonstration
+                }}
+                className="border-2 border-white text-white hover:bg-white hover:text-blue-600 px-8 py-4 rounded-xl font-semibold text-lg transition-all duration-200"
+              >
                 Watch Demo
               </button>
             </div>

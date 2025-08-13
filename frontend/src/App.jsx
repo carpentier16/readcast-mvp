@@ -6,6 +6,8 @@ import {
   FeaturesSection,
   VoiceSection,
   HowItWorksSection,
+  PricingSection,
+  AboutSection,
   Footer
 } from './components';
 
@@ -17,6 +19,8 @@ function App() {
       <FeaturesSection />
       <VoiceSection />
       <HowItWorksSection />
+      <PricingSection />
+      <AboutSection />
       <Footer />
     </div>
   );
