@@ -8,7 +8,22 @@ import re
 
 class AuthService:
     def __init__(self):
-        self.SessionLocal = get_session_maker()
+        # Ne pas créer le session maker ici pour éviter les imports circulaires
+        self.SessionLocal = None
+
+    def _get_session_maker(self):
+        """Obtenir le session maker de manière lazy pour éviter les imports circulaires."""
+        if self.SessionLocal is None:
+            from ..models.db import get_session_maker
+            from ..settings import settings
+            from ..models.db import get_engine
+            engine = get_engine(settings.DATABASE_URL)
+            self.SessionLocal = get_session_maker(engine)
+        return self.SessionLocal
+
+    def _get_session(self) -> Session:
+        """Obtenir une nouvelle session de base de données."""
+        return self._get_session_maker()()
 
     def _validate_email(self, email: str) -> bool:
         """Valider le format d'un email."""
@@ -60,7 +75,7 @@ class AuthService:
                 return False, {"error": password_msg}
             
             # Vérifier si l'utilisateur existe déjà
-            session = self.SessionLocal()
+            session = self._get_session()
             
             existing_user = session.query(User).filter(
                 (User.email == email) | (User.username == username)
@@ -68,8 +83,10 @@ class AuthService:
             
             if existing_user:
                 if existing_user.email == email:
+                    session.close()
                     return False, {"error": "Cet email est déjà utilisé"}
                 else:
+                    session.close()
                     return False, {"error": "Ce nom d'utilisateur est déjà pris"}
             
             # Créer le nouvel utilisateur
@@ -102,14 +119,15 @@ class AuthService:
             session.close()
             return False, {"error": "Erreur lors de la création de l'utilisateur"}
         except Exception as e:
-            session.rollback()
-            session.close()
+            if 'session' in locals():
+                session.rollback()
+                session.close()
             return False, {"error": f"Erreur inattendue: {str(e)}"}
 
     def authenticate_user(self, email_or_username: str, password: str) -> Tuple[bool, dict]:
         """Authentifier un utilisateur."""
         try:
-            session = self.SessionLocal()
+            session = self._get_session()
             
             # Chercher l'utilisateur par email ou username
             user = session.query(User).filter(
@@ -147,7 +165,8 @@ class AuthService:
             }
             
         except Exception as e:
-            session.close()
+            if 'session' in locals():
+                session.close()
             return False, {"error": f"Erreur lors de l'authentification: {str(e)}"}
 
     def refresh_access_token(self, refresh_token: str) -> Tuple[bool, dict]:
@@ -163,7 +182,7 @@ class AuthService:
                 return False, {"error": "Token de rafraîchissement invalide"}
             
             # Vérifier que l'utilisateur existe toujours
-            session = self.SessionLocal()
+            session = self._get_session()
             user = session.query(User).filter(User.id == user_id, User.is_active == True).first()
             
             if not user:
@@ -181,6 +200,8 @@ class AuthService:
             }
             
         except Exception as e:
+            if 'session' in locals():
+                session.close()
             return False, {"error": f"Erreur lors du rafraîchissement: {str(e)}"}
 
     def get_current_user(self, token: str) -> Tuple[bool, dict]:
@@ -196,7 +217,7 @@ class AuthService:
                 return False, {"error": "Token d'accès invalide"}
             
             # Récupérer l'utilisateur
-            session = self.SessionLocal()
+            session = self._get_session()
             user = session.query(User).filter(User.id == user_id, User.is_active == True).first()
             
             if not user:
@@ -208,12 +229,14 @@ class AuthService:
             return True, {"user": user.to_dict()}
             
         except Exception as e:
+            if 'session' in locals():
+                session.close()
             return False, {"error": f"Erreur lors de la récupération de l'utilisateur: {str(e)}"}
 
     def change_password(self, user_id: str, current_password: str, new_password: str) -> Tuple[bool, dict]:
         """Changer le mot de passe d'un utilisateur."""
         try:
-            session = self.SessionLocal()
+            session = self._get_session()
             
             # Récupérer l'utilisateur
             user = session.query(User).filter(User.id == user_id).first()
@@ -241,14 +264,15 @@ class AuthService:
             return True, {"message": "Mot de passe modifié avec succès"}
             
         except Exception as e:
-            session.rollback()
-            session.close()
+            if 'session' in locals():
+                session.rollback()
+                session.close()
             return False, {"error": f"Erreur lors du changement de mot de passe: {str(e)}"}
 
     def update_user_profile(self, user_id: str, **kwargs) -> Tuple[bool, dict]:
         """Mettre à jour le profil d'un utilisateur."""
         try:
-            session = self.SessionLocal()
+            session = self._get_session()
             
             # Récupérer l'utilisateur
             user = session.query(User).filter(User.id == user_id).first()
@@ -273,14 +297,15 @@ class AuthService:
             }
             
         except Exception as e:
-            session.rollback()
-            session.close()
+            if 'session' in locals():
+                session.rollback()
+                session.close()
             return False, {"error": f"Erreur lors de la mise à jour du profil: {str(e)}"}
 
     def deactivate_user(self, user_id: str) -> Tuple[bool, dict]:
         """Désactiver un utilisateur."""
         try:
-            session = self.SessionLocal()
+            session = self._get_session()
             
             user = session.query(User).filter(User.id == user_id).first()
             if not user:
@@ -295,8 +320,9 @@ class AuthService:
             return True, {"message": "Utilisateur désactivé avec succès"}
             
         except Exception as e:
-            session.rollback()
-            session.close()
+            if 'session' in locals():
+                session.rollback()
+                session.close()
             return False, {"error": f"Erreur lors de la désactivation: {str(e)}"}
 
 # Instance singleton du service d'authentification

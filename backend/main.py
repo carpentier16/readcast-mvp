@@ -15,7 +15,6 @@ from sse_starlette.sse import EventSourceResponse
 from .settings import settings
 from .models.db import Job, JobStatus, get_engine, get_session_maker
 from .models.user import User, UserSession
-from .services.auth import auth_service
 from .workers.processor import process_job
 
 # RQ / Redis
@@ -67,6 +66,10 @@ security = HTTPBearer()
 def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
     """Dependency pour récupérer l'utilisateur actuel."""
     token = credentials.credentials
+    
+    # Import lazy pour éviter les imports circulaires
+    from .services.auth import auth_service
+    
     success, result = auth_service.get_current_user(token)
     
     if not success:
@@ -157,6 +160,9 @@ def health():
 @app.post("/api/auth/register", response_model=dict)
 async def register(user_data: UserCreate):
     """Enregistrer un nouvel utilisateur."""
+    # Import lazy pour éviter les imports circulaires
+    from .services.auth import auth_service
+    
     success, result = auth_service.register_user(
         email=user_data.email,
         username=user_data.username,
@@ -175,6 +181,9 @@ async def register(user_data: UserCreate):
 @app.post("/api/auth/login", response_model=dict)
 async def login(login_data: UserLogin):
     """Authentifier un utilisateur."""
+    # Import lazy pour éviter les imports circulaires
+    from .services.auth import auth_service
+    
     success, result = auth_service.authenticate_user(
         email_or_username=login_data.email_or_username,
         password=login_data.password
@@ -191,6 +200,9 @@ async def login(login_data: UserLogin):
 @app.post("/api/auth/refresh", response_model=dict)
 async def refresh_token(refresh_token: str):
     """Rafraîchir un token d'accès."""
+    # Import lazy pour éviter les imports circulaires
+    from .services.auth import auth_service
+    
     success, result = auth_service.refresh_access_token(refresh_token)
     
     if not success:
@@ -212,6 +224,9 @@ async def update_profile(
     current_user: dict = Depends(get_current_user)
 ):
     """Mettre à jour le profil de l'utilisateur."""
+    # Import lazy pour éviter les imports circulaires
+    from .services.auth import auth_service
+    
     success, result = auth_service.update_user_profile(
         user_id=current_user["id"],
         **profile_data
@@ -232,6 +247,9 @@ async def change_password(
     current_user: dict = Depends(get_current_user)
 ):
     """Changer le mot de passe de l'utilisateur."""
+    # Import lazy pour éviter les imports circulaires
+    from .services.auth import auth_service
+    
     success, result = auth_service.change_password(
         user_id=current_user["id"],
         current_password=current_password,
