@@ -46,9 +46,16 @@ class Settings(BaseSettings):
 
     # --- CORS ---
     # Accept either a JSON list (["https://foo"]) OR a comma-separated string ("https://foo, https://bar")
-    CORS_ORIGINS: List[str] = Field(default_factory=list)
+    CORS_ORIGINS: List[str] = Field(default_factory=lambda: [
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "https://*.vercel.app",
+        "https://*.onrender.com",
+        "https://readcast-mvp.onrender.com",
+        "https://readcast-mvp.vercel.app"
+    ])
     # If you want to allow all *.vercel.app previews, set this to r"https://.*\.vercel\.app"
-    CORS_ORIGIN_REGEX: Optional[str] = None
+    CORS_ORIGIN_REGEX: Optional[str] = r"https://.*\.vercel\.app|https://.*\.onrender\.com"
 
     @field_validator("CORS_ORIGINS", mode="before")
     @classmethod

@@ -8,3 +8,7 @@ export { default as Button } from './Button';
 export { default as ErrorBoundary } from './ErrorBoundary';
 export { default as ProjectsSection } from './ProjectsSection';
 export { default as UploadSection } from './UploadSection';
+
+// Configuration et Services
+export { default as API_CONFIG } from '../config/api.js';
+export { default as apiService } from '../services/api.js';

@@ -19,8 +19,8 @@ const Header = () => {
   return (
     <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
       isScrolled 
-        ? 'bg-white/95 backdrop-blur-md shadow-lg border-b border-gray-100' 
-        : 'bg-transparent'
+        ? 'bg-white/95 backdrop-blur-md shadow-lg border-b border-gray-200' 
+        : 'bg-white/90 backdrop-blur-sm'
     }`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center py-4">
@@ -36,7 +36,7 @@ const Header = () => {
               <span className="text-2xl font-bold bg-gradient-to-r from-gray-900 via-blue-600 to-indigo-600 bg-clip-text text-transparent">
                 READCAST
               </span>
-              <span className="text-xs text-gray-500 font-medium">AI-Powered Audio</span>
+              <span className="text-xs text-gray-600 font-medium">AI-Powered Audio</span>
             </div>
           </div>
 
@@ -57,7 +57,7 @@ const Header = () => {
             
             {/* Language Selector */}
             <div className="relative group">
-              <select className="appearance-none bg-transparent border-none text-gray-700 font-medium cursor-pointer pr-8 focus:outline-none">
+              <select className="appearance-none bg-transparent border-none text-gray-700 font-medium cursor-pointer pr-8 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg px-3 py-1">
                 <option>🇺🇸 EN</option>
                 <option>🇫🇷 FR</option>
                 <option>🇪🇸 ES</option>
@@ -71,7 +71,7 @@ const Header = () => {
 
             {/* CTA Buttons */}
             <div className="flex items-center space-x-4">
-              <a href="#login" className="text-gray-700 hover:text-gray-900 font-medium transition-colors duration-200">
+              <a href="#login" className="text-gray-700 hover:text-gray-900 font-medium transition-colors duration-200 px-4 py-2 rounded-lg hover:bg-gray-100">
                 Sign In
               </a>
               <a href="#register" className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300">

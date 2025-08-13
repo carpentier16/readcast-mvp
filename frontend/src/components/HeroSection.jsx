@@ -1,10 +1,13 @@
 import React, { useState, useCallback, useEffect } from 'react';
+import apiService from '../services/api.js';
 
 const HeroSection = () => {
   const [file, setFile] = useState(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [currentText, setCurrentText] = useState(0);
+  const [connectionStatus, setConnectionStatus] = useState('checking');
 
   const texts = [
     "The world's most trusted PDF to audio converter",
@@ -19,6 +22,20 @@ const HeroSection = () => {
     return () => clearInterval(interval);
   }, [texts.length]);
 
+  // Vérifier la connexion au backend
+  useEffect(() => {
+    const checkConnection = async () => {
+      try {
+        const result = await apiService.testConnection();
+        setConnectionStatus(result.connected ? 'connected' : 'disconnected');
+      } catch (error) {
+        setConnectionStatus('disconnected');
+      }
+    };
+    
+    checkConnection();
+  }, []);
+
   const handleFileChange = (event) => {
     const selectedFile = event.target.files[0];
     if (selectedFile && selectedFile.type === 'application/pdf') {
@@ -29,9 +46,24 @@ const HeroSection = () => {
 
   const handleFileUpload = async (file) => {
     setIsUploading(true);
-    setTimeout(() => {
+    setUploadProgress(0);
+    
+    try {
+      // Utiliser le service API avec progression
+      await apiService.uploadFileWithProgress(file, (progress) => {
+        setUploadProgress(progress);
+      });
+      
+      // Simuler le traitement
+      setTimeout(() => {
+        setIsUploading(false);
+        setUploadProgress(100);
+      }, 2000);
+    } catch (error) {
+      console.error('Upload error:', error);
       setIsUploading(false);
-    }, 2000);
+      setUploadProgress(0);
+    }
   };
 
   const handleDragOver = useCallback((e) => {
@@ -56,33 +88,53 @@ const HeroSection = () => {
   }, []);
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 pt-20">
-      {/* Background Elements */}
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-white via-blue-50 to-indigo-100 pt-20">
+      {/* Background Elements Subtils */}
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-blue-400/20 to-purple-400/20 rounded-full blur-3xl"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-br from-indigo-400/20 to-pink-400/20 rounded-full blur-3xl"></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-br from-blue-300/10 to-indigo-300/10 rounded-full blur-3xl"></div>
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-blue-100/40 to-indigo-100/40 rounded-full blur-3xl"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-br from-indigo-100/40 to-purple-100/40 rounded-full blur-3xl"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-br from-blue-50/30 to-indigo-50/30 rounded-full blur-3xl"></div>
       </div>
 
-      {/* Floating Icons */}
+      {/* Status Badge */}
+      <div className="absolute top-8 right-8 z-20">
+        <div className={`inline-flex items-center px-4 py-2 rounded-full shadow-lg border ${
+          connectionStatus === 'connected' 
+            ? 'bg-green-50 border-green-200 text-green-700' 
+            : connectionStatus === 'disconnected'
+            ? 'bg-red-50 border-red-200 text-red-700'
+            : 'bg-yellow-50 border-yellow-200 text-yellow-700'
+        }`}>
+          <div className={`w-2 h-2 rounded-full mr-2 ${
+            connectionStatus === 'connected' ? 'bg-green-500' : 'bg-red-500'
+          } ${connectionStatus === 'checking' ? 'animate-pulse' : ''}`}></div>
+          <span className="text-sm font-medium">
+            {connectionStatus === 'connected' ? 'Backend Connected' : 
+             connectionStatus === 'disconnected' ? 'Backend Disconnected' : 
+             'Checking Connection...'}
+          </span>
+        </div>
+      </div>
+
+      {/* Floating Icons Subtils */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-20 left-20 animate-float-slow">
-          <div className="w-16 h-16 bg-white/10 backdrop-blur-sm rounded-2xl border border-white/20 flex items-center justify-center">
-            <svg className="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="w-16 h-16 bg-white/80 backdrop-blur-sm rounded-2xl border border-blue-100 shadow-lg flex items-center justify-center">
+            <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
           </div>
         </div>
         <div className="absolute top-40 right-32 animate-float-medium">
-          <div className="w-12 h-12 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 flex items-center justify-center">
-            <svg className="w-6 h-6 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="w-12 h-12 bg-white/80 backdrop-blur-sm rounded-xl border border-indigo-100 shadow-lg flex items-center justify-center">
+            <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
             </svg>
           </div>
         </div>
         <div className="absolute bottom-32 left-32 animate-float-fast">
-          <div className="w-20 h-20 bg-white/10 backdrop-blur-sm rounded-2xl border border-white/20 flex items-center justify-center">
-            <svg className="w-10 h-10 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="w-20 h-20 bg-white/80 backdrop-blur-sm rounded-2xl border border-purple-100 shadow-lg flex items-center justify-center">
+            <svg className="w-10 h-10 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
             </svg>
           </div>
@@ -91,9 +143,9 @@ const HeroSection = () => {
 
       <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
         {/* Animated Badge */}
-        <div className="inline-flex items-center px-4 py-2 bg-white/80 backdrop-blur-sm border border-white/20 rounded-full shadow-lg mb-8 animate-fade-in-up">
-          <div className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
-          <span className="text-sm font-medium text-gray-700">Trusted by 10,000+ users worldwide</span>
+        <div className="inline-flex items-center px-6 py-3 bg-white/90 backdrop-blur-sm border border-blue-200 rounded-full shadow-lg mb-8 animate-fade-in-up">
+          <div className="w-3 h-3 bg-green-500 rounded-full mr-3 animate-pulse"></div>
+          <span className="text-sm font-semibold text-gray-800">Trusted by 10,000+ users worldwide</span>
         </div>
 
         {/* Main Heading with Typewriter Effect */}
@@ -115,20 +167,20 @@ const HeroSection = () => {
         </h1>
         
         {/* Subtitle */}
-        <p className="text-xl md:text-2xl text-gray-600 mb-12 max-w-4xl mx-auto leading-relaxed animate-fade-in-up" style={{ animationDelay: '500ms' }}>
+        <p className="text-xl md:text-2xl text-gray-700 mb-12 max-w-4xl mx-auto leading-relaxed animate-fade-in-up" style={{ animationDelay: '500ms' }}>
           Experience the future of document consumption. Our advanced AI transforms any PDF into 
           natural-sounding audio with multiple voice options and professional quality.
         </p>
         
         {/* Upload Area Ultra-Moderne */}
         <div className={`relative max-w-2xl mx-auto mb-12 animate-fade-in-up`} style={{ animationDelay: '700ms' }}>
-          <div className={`relative bg-white/80 backdrop-blur-md rounded-3xl p-12 shadow-2xl border-2 transition-all duration-500 ${
+          <div className={`relative bg-white rounded-3xl p-12 shadow-2xl border-2 transition-all duration-500 ${
             isDragOver 
               ? 'border-blue-400 scale-105 shadow-blue-200/50' 
-              : 'border-white/20 hover:border-blue-200/50'
+              : 'border-gray-200 hover:border-blue-300'
           }`}>
             {/* Glow Effect */}
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-3xl blur-xl opacity-0 hover:opacity-100 transition-opacity duration-500"></div>
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5 rounded-3xl blur-xl opacity-0 hover:opacity-100 transition-opacity duration-500"></div>
             
             <div className="relative z-10">
               {/* File Input */}
@@ -168,27 +220,42 @@ const HeroSection = () => {
                 )}
               </label>
 
+              {/* Progress Bar */}
+              {isUploading && (
+                <div className="mt-6">
+                  <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                    <div 
+                      className="bg-gradient-to-r from-blue-500 to-purple-500 h-3 rounded-full transition-all duration-300"
+                      style={{ width: `${uploadProgress}%` }}
+                    ></div>
+                  </div>
+                  <p className="text-sm text-gray-600 mt-2 font-medium">
+                    {uploadProgress.toFixed(0)}% Complete
+                  </p>
+                </div>
+              )}
+
               {/* Drag & Drop Text */}
-              <p className="text-gray-500 mt-6 text-lg font-medium">
+              <p className="text-gray-600 mt-6 text-lg font-medium">
                 or drag and drop your PDF here
               </p>
 
               {/* File Types */}
-              <div className="flex items-center justify-center mt-4 space-x-4 text-sm text-gray-400">
+              <div className="flex items-center justify-center mt-4 space-x-6 text-sm text-gray-500">
                 <span className="flex items-center">
-                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   PDF files
                 </span>
                 <span className="flex items-center">
-                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   Up to 50MB
                 </span>
                 <span className="flex items-center">
-                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 mr-2 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   Secure & private
@@ -200,7 +267,7 @@ const HeroSection = () => {
           {/* File Selected Status */}
           {file && (
             <div className="absolute -bottom-20 left-1/2 transform -translate-x-1/2 w-full max-w-md">
-              <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-white/20">
+              <div className="bg-white rounded-2xl p-6 shadow-xl border border-gray-200">
                 <div className="flex items-center justify-center mb-3">
                   <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-3">
                     <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -223,7 +290,7 @@ const HeroSection = () => {
         </div>
 
         {/* Trust Indicators */}
-        <div className="flex flex-wrap items-center justify-center space-x-8 text-gray-500 animate-fade-in-up" style={{ animationDelay: '900ms' }}>
+        <div className="flex flex-wrap items-center justify-center space-x-8 text-gray-600 animate-fade-in-up" style={{ animationDelay: '900ms' }}>
           <div className="flex items-center">
             <svg className="w-5 h-5 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
