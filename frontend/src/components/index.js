@@ -23,6 +23,9 @@ export { default as LoginForm } from './auth/LoginForm';
 export { default as RegisterForm } from './auth/RegisterForm';
 export { default as AuthModal } from './auth/AuthModal';
 
+// Composant de test API
+export { default as ApiTest } from './ApiTest';
+
 // Configuration et Services
 export { default as API_CONFIG } from '../config/api.js';
 export { default as apiService } from '../services/api.js';

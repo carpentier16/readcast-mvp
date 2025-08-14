@@ -10,11 +10,12 @@ import {
   PricingSection,
   AboutSection,
   Footer,
-  ProjectManager
+  ProjectManager,
+  ApiTest
 } from './components';
 
 function App() {
-  const [currentView, setCurrentView] = useState('main'); // 'main' ou 'projects'
+  const [currentView, setCurrentView] = useState('main'); // 'main', 'projects', ou 'test'
 
   const renderMainView = () => (
     <>
@@ -33,6 +34,16 @@ function App() {
     <>
       <Header />
       <ProjectManager />
+      <Footer />
+    </>
+  );
+
+  const renderTestView = () => (
+    <>
+      <Header />
+      <div className="pt-20 pb-8">
+        <ApiTest />
+      </div>
       <Footer />
     </>
   );
@@ -63,11 +74,23 @@ function App() {
             >
               Projets
             </button>
+            <button
+              onClick={() => setCurrentView('test')}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                currentView === 'test'
+                  ? 'bg-blue-600 text-white'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+              }`}
+            >
+              🧪 Test API
+            </button>
           </div>
         </div>
 
         {/* Contenu principal */}
-        {currentView === 'main' ? renderMainView() : renderProjectsView()}
+        {currentView === 'main' ? renderMainView() : 
+         currentView === 'projects' ? renderProjectsView() : 
+         renderTestView()}
       </div>
     </LanguageProvider>
   );

@@ -93,6 +93,13 @@ const RegisterForm = ({ onSuccess, onSwitchToLogin, onClose }) => {
     setGeneralError('');
     
     try {
+      console.log('📝 Tentative d\'inscription avec:', {
+        email: formData.email,
+        username: formData.username,
+        full_name: formData.full_name,
+        password_length: formData.password.length
+      });
+      
       const result = await authService.register({
         email: formData.email.trim(),
         username: formData.username.trim(),
@@ -100,12 +107,17 @@ const RegisterForm = ({ onSuccess, onSwitchToLogin, onClose }) => {
         full_name: formData.full_name.trim() || undefined
       });
       
+      console.log('📡 Résultat inscription:', result);
+      
       if (result.success) {
+        console.log('✅ Inscription réussie!');
         onSuccess?.(result.data);
       } else {
+        console.error('❌ Échec inscription:', result.error);
         setGeneralError(result.error);
       }
     } catch (error) {
+      console.error('💥 Erreur exceptionnelle lors de l\'inscription:', error);
       setGeneralError('Erreur lors de l\'inscription. Veuillez réessayer.');
     } finally {
       setIsLoading(false);

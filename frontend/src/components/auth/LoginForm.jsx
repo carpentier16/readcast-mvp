@@ -59,14 +59,20 @@ const LoginForm = ({ onSuccess, onSwitchToRegister, onClose }) => {
     setGeneralError('');
     
     try {
+      console.log('🔐 Tentative de connexion avec:', formData);
+      
       const result = await authService.login(formData);
+      console.log('📡 Résultat connexion:', result);
       
       if (result.success) {
+        console.log('✅ Connexion réussie!');
         onSuccess?.(result.data);
       } else {
+        console.error('❌ Échec connexion:', result.error);
         setGeneralError(result.error);
       }
     } catch (error) {
+      console.error('💥 Erreur exceptionnelle lors de la connexion:', error);
       setGeneralError('Erreur de connexion. Veuillez réessayer.');
     } finally {
       setIsLoading(false);
