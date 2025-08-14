@@ -8,7 +8,7 @@ const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-  const { currentLanguage, setLanguage, t } = useTranslation();
+  const { t } = useTranslation();
 
   // État d'authentification
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -57,16 +57,6 @@ const Header = () => {
     setCurrentUser(null);
     setIsUserMenuOpen(false);
   };
-
-  const handleLanguageChange = (language) => {
-    setLanguage(language);
-  };
-
-  const languageOptions = [
-    { code: 'en', name: '🇺🇸 EN', flag: '🇺🇸' },
-    { code: 'fr', name: '🇫🇷 FR', flag: '🇫🇷' },
-    { code: 'es', name: '🇪🇸 ES', flag: '🇪🇸' }
-  ];
 
   return (
     <>
@@ -117,29 +107,7 @@ const Header = () => {
                 <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-blue-600 group-hover:w-full transition-all duration-300"></span>
               </button>
               
-              {/* Language Selector */}
-              <div className="relative group">
-                <button className="flex items-center space-x-2 text-gray-700 hover:text-gray-900 font-medium transition-colors duration-200">
-                  <span>{t('nav.language')}</span>
-                  <svg className="w-4 h-4 transition-transform duration-200 group-hover:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-                
-                <div className="absolute top-full left-0 mt-2 w-32 bg-white rounded-lg shadow-lg border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
-                  {languageOptions.map((lang) => (
-                    <button
-                      key={lang.code}
-                      onClick={() => handleLanguageChange(lang.code)}
-                      className={`w-full px-4 py-2 text-left hover:bg-gray-50 transition-colors ${
-                        currentLanguage === lang.code ? 'bg-blue-50 text-blue-600' : 'text-gray-700'
-                      }`}
-                    >
-                      {lang.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
+
             </nav>
 
             {/* Actions d'authentification */}

@@ -21,129 +21,77 @@ export const useTranslation = () => {
   };
 };
 
-// Fonction de traduction simplifiée et robuste
-const translate = (key, language) => {
-  console.log(`🔍 Traduction demandée: "${key}" en "${language}"`);
+// Fonction de traduction simplifiée - anglais uniquement
+const translate = (key) => {
+  console.log(`🔍 Translation requested: "${key}"`);
   
   const keys = key.split('.');
-  console.log('🔑 Clés décomposées:', keys);
+  console.log('🔑 Keys decomposed:', keys);
   
   let translations = null;
   
-  // Sélectionner le bon fichier de traductions
-  if (keys[0] === 'nav') {
-    translations = navTranslations;
-    console.log('📁 Fichier nav sélectionné:', translations);
-  } else if (keys[0] === 'hero') {
-    translations = heroTranslations;
-    console.log('📁 Fichier hero sélectionné:', translations);
-  } else {
-    console.warn('⚠️ Section inconnue:', keys[0]);
-    return key;
-  }
-  
-  // Vérifier que la langue existe
-  if (!translations[language]) {
-    console.warn(`⚠️ Langue "${language}" non trouvée, fallback vers "en"`);
-    language = 'en';
-  }
-  
-  let value = translations[language];
-  console.log('🌍 Traductions pour la langue:', value);
-  
-  // Naviguer dans les clés imbriquées
-  for (let i = 1; i < keys.length; i++) {
-    const k = keys[i];
-    console.log(`🔍 Recherche de la clé "${k}" dans:`, value);
-    
-    if (value && typeof value === 'object' && value[k] !== undefined) {
-      value = value[k];
-      console.log(`✅ Valeur trouvée:`, value);
-    } else {
-      console.warn(`❌ Clé "${k}" non trouvée dans:`, value);
-      break;
-    }
-  }
-  
-  // Vérifier le résultat final
-  if (value && typeof value === 'string') {
-    console.log(`🎯 Traduction finale: "${value}"`);
-    return value;
-  } else {
-    console.warn(`❌ Résultat invalide:`, value);
-    // Fallback vers l'anglais
-    return translateFallback(key, 'en');
-  }
-};
-
-// Fallback vers l'anglais
-const translateFallback = (key, language) => {
-  console.log(`🔄 Fallback vers l'anglais pour: "${key}"`);
-  
-  const keys = key.split('.');
-  let translations = null;
-  
+  // Select the correct translation file
   if (keys[0] === 'nav') {
     translations = navTranslations.en;
+    console.log('📁 Nav file selected:', translations);
   } else if (keys[0] === 'hero') {
     translations = heroTranslations.en;
+    console.log('📁 Hero file selected:', translations);
   } else {
+    console.warn('⚠️ Unknown section:', keys[0]);
     return key;
   }
   
   let value = translations;
+  console.log('🌍 Translations for English:', value);
   
+  // Navigate through nested keys
   for (let i = 1; i < keys.length; i++) {
     const k = keys[i];
+    console.log(`🔍 Searching for key "${k}" in:`, value);
+    
     if (value && typeof value === 'object' && value[k] !== undefined) {
       value = value[k];
+      console.log(`✅ Value found:`, value);
     } else {
+      console.warn(`❌ Key "${k}" not found in:`, value);
       break;
     }
   }
   
+  // Check final result
   if (value && typeof value === 'string') {
-    console.log(`🔄 Fallback réussi: "${value}"`);
+    console.log(`🎯 Final translation: "${value}"`);
     return value;
+  } else {
+    console.warn(`❌ Invalid result:`, value);
+    return key; // Return the key if no translation found
   }
-  
-  console.error(`💥 Fallback échoué, retour de la clé: "${key}"`);
-  return key;
 };
 
-// Provider du contexte de langue
+// Provider du contexte de langue - anglais forcé
 export const LanguageProvider = ({ children }) => {
-  const [currentLanguage, setCurrentLanguage] = useState(() => {
-    // Récupérer la langue depuis le localStorage ou utiliser le français par défaut
-    const savedLanguage = localStorage.getItem('readcast-language');
-    return savedLanguage || 'fr';
-  });
+  const [currentLanguage, setCurrentLanguage] = useState('en');
 
-  // Fonction pour changer la langue
+  // Function to change language (kept for compatibility but always returns English)
   const setLanguage = (language) => {
-    console.log(`🌍 Changement de langue: ${currentLanguage} → ${language}`);
-    setCurrentLanguage(language);
-    localStorage.setItem('readcast-language', language);
+    console.log(`🌍 Language change requested: ${language} → forced to English`);
+    setCurrentLanguage('en');
     
-    // Mettre à jour l'attribut lang du document HTML
-    document.documentElement.lang = language;
+    // Update document lang attribute
+    document.documentElement.lang = 'en';
     
-    // Mettre à jour le titre de la page
-    const titles = {
-      en: 'ReadCast - AI-Powered PDF to Audio Conversion',
-      fr: 'ReadCast - Conversion PDF vers Audio par IA',
-      es: 'ReadCast - Conversión de PDF a Audio con IA'
-    };
-    document.title = titles[language] || titles.fr;
+    // Update page title
+    document.title = 'ReadCast - AI-Powered PDF to Audio Conversion';
   };
 
-  // Fonction de traduction
-  const t = (key) => translate(key, currentLanguage);
+  // Translation function
+  const t = (key) => translate(key);
 
-  // Effet pour initialiser la langue
+  // Effect to initialize language
   useEffect(() => {
-    console.log(`🚀 Initialisation de la langue: ${currentLanguage}`);
-    setLanguage(currentLanguage);
+    console.log(`🚀 Initializing language: English only`);
+    setLanguage('en');
   }, []);
 
   const value = {
