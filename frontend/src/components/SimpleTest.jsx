@@ -83,6 +83,54 @@ const SimpleTest = () => {
           </p>
         </div>
 
+        {/* Test de connectivité API */}
+        <div className="bg-yellow-100 p-4 rounded border">
+          <h3 className="font-semibold text-yellow-800 mb-3">🌐 Test de Connectivité API</h3>
+          <div className="space-y-2">
+            <button
+              onClick={async () => {
+                try {
+                  console.log('🔍 Testing API connectivity...');
+                  const response = await fetch('https://audiobook-api.onrender.com/health');
+                  const data = await response.json();
+                  console.log('✅ API Health check:', data);
+                  alert(`API Health: ${response.status} - ${JSON.stringify(data)}`);
+                } catch (error) {
+                  console.error('❌ API Health check failed:', error);
+                  alert(`API Error: ${error.message}`);
+                }
+              }}
+              className="px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700 mr-2"
+            >
+              Test API Health
+            </button>
+            <button
+              onClick={async () => {
+                try {
+                  console.log('🔍 Testing API auth endpoint...');
+                  const response = await fetch('https://audiobook-api.onrender.com/api/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({})
+                  });
+                  const data = await response.json();
+                  console.log('✅ API Auth endpoint:', response.status, data);
+                  alert(`API Auth: ${response.status} - ${JSON.stringify(data)}`);
+                } catch (error) {
+                  console.error('❌ API Auth endpoint failed:', error);
+                  alert(`API Auth Error: ${error.message}`);
+                }
+              }}
+              className="px-4 py-2 bg-orange-600 text-white rounded hover:bg-orange-700"
+            >
+              Test API Auth Endpoint
+            </button>
+          </div>
+          <p className="text-xs text-yellow-700 mt-2">
+            Ces boutons testent la connectivité avec le backend Render
+          </p>
+        </div>
+
         {/* Affichage des formulaires d'authentification */}
         {showLoginForm && (
           <div className="bg-white p-4 rounded border">
