@@ -12,11 +12,12 @@ import {
   Footer,
   ProjectManager,
   ApiTest,
-  TranslationDebug
+  TranslationDebug,
+  FormTest
 } from './components';
 
 function App() {
-  const [currentView, setCurrentView] = useState('main'); // 'main', 'projects', 'test', ou 'debug'
+  const [currentView, setCurrentView] = useState('main'); // 'main', 'projects', 'test', 'debug', ou 'formtest'
 
   const renderMainView = () => (
     <>
@@ -54,6 +55,16 @@ function App() {
       <Header />
       <div className="pt-20 pb-8">
         <TranslationDebug />
+      </div>
+      <Footer />
+    </>
+  );
+
+  const renderFormTestView = () => (
+    <>
+      <Header />
+      <div className="pt-20 pb-8">
+        <FormTest />
       </div>
       <Footer />
     </>
@@ -105,6 +116,16 @@ function App() {
             >
               🐛 Debug
             </button>
+            <button
+              onClick={() => setCurrentView('formtest')}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                currentView === 'formtest'
+                  ? 'bg-blue-600 text-white'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+              }`}
+            >
+              📝 Test Form
+            </button>
           </div>
         </div>
 
@@ -112,7 +133,8 @@ function App() {
         {currentView === 'main' ? renderMainView() : 
          currentView === 'projects' ? renderProjectsView() : 
          currentView === 'test' ? renderTestView() :
-         renderDebugView()}
+         currentView === 'debug' ? renderDebugView() :
+         renderFormTestView()}
       </div>
     </LanguageProvider>
   );
