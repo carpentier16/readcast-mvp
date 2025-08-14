@@ -26,6 +26,9 @@ export { default as AuthModal } from './auth/AuthModal';
 // Composant de test API
 export { default as ApiTest } from './ApiTest';
 
+// Composant de debug des traductions
+export { default as TranslationDebug } from './TranslationDebug';
+
 // Configuration et Services
 export { default as API_CONFIG } from '../config/api.js';
 export { default as apiService } from '../services/api.js';

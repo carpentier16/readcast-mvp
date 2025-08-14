@@ -11,11 +11,12 @@ import {
   AboutSection,
   Footer,
   ProjectManager,
-  ApiTest
+  ApiTest,
+  TranslationDebug
 } from './components';
 
 function App() {
-  const [currentView, setCurrentView] = useState('main'); // 'main', 'projects', ou 'test'
+  const [currentView, setCurrentView] = useState('main'); // 'main', 'projects', 'test', ou 'debug'
 
   const renderMainView = () => (
     <>
@@ -43,6 +44,16 @@ function App() {
       <Header />
       <div className="pt-20 pb-8">
         <ApiTest />
+      </div>
+      <Footer />
+    </>
+  );
+
+  const renderDebugView = () => (
+    <>
+      <Header />
+      <div className="pt-20 pb-8">
+        <TranslationDebug />
       </div>
       <Footer />
     </>
@@ -84,13 +95,24 @@ function App() {
             >
               🧪 Test API
             </button>
+            <button
+              onClick={() => setCurrentView('debug')}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                currentView === 'debug'
+                  ? 'bg-blue-600 text-white'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+              }`}
+            >
+              🐛 Debug
+            </button>
           </div>
         </div>
 
         {/* Contenu principal */}
         {currentView === 'main' ? renderMainView() : 
          currentView === 'projects' ? renderProjectsView() : 
-         renderTestView()}
+         currentView === 'test' ? renderTestView() :
+         renderDebugView()}
       </div>
     </LanguageProvider>
   );
