@@ -22,7 +22,7 @@ const RegisterForm = ({ onSuccess, onSwitchToLogin, onClose }) => {
       [name]: value
     }));
     
-    // Effacer l'erreur du champ modifié
+    // Clear field error when modified
     if (errors[name]) {
       setErrors(prev => ({
         ...prev,
@@ -30,7 +30,7 @@ const RegisterForm = ({ onSuccess, onSwitchToLogin, onClose }) => {
       }));
     }
     
-    // Effacer l'erreur générale
+    // Clear general error
     if (generalError) {
       setGeneralError('');
     }
@@ -39,43 +39,43 @@ const RegisterForm = ({ onSuccess, onSwitchToLogin, onClose }) => {
   const validateForm = () => {
     const newErrors = {};
     
-    // Validation email
+    // Email validation
     if (!formData.email.trim()) {
-      newErrors.email = 'Email requis';
+      newErrors.email = 'Email is required';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Format d\'email invalide';
+      newErrors.email = 'Invalid email format';
     }
     
-    // Validation username
+    // Username validation
     if (!formData.username.trim()) {
-      newErrors.username = 'Nom d\'utilisateur requis';
+      newErrors.username = 'Username is required';
     } else if (formData.username.length < 3) {
-      newErrors.username = 'Le nom d\'utilisateur doit contenir au moins 3 caractères';
+      newErrors.username = 'Username must contain at least 3 characters';
     } else if (formData.username.length > 20) {
-      newErrors.username = 'Le nom d\'utilisateur ne peut pas dépasser 20 caractères';
+      newErrors.username = 'Username cannot exceed 20 characters';
     } else if (!/^[a-zA-Z0-9_-]+$/.test(formData.username)) {
-      newErrors.username = 'Le nom d\'utilisateur ne peut contenir que des lettres, chiffres, tirets et underscores';
+      newErrors.username = 'Username can only contain letters, numbers, hyphens and underscores';
     }
     
-    // Validation mot de passe
+    // Password validation
     if (!formData.password) {
-      newErrors.password = 'Mot de passe requis';
+      newErrors.password = 'Password is required';
     } else if (formData.password.length < 8) {
-      newErrors.password = 'Le mot de passe doit contenir au moins 8 caractères';
+      newErrors.password = 'Password must contain at least 8 characters';
     } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(formData.password)) {
-      newErrors.password = 'Le mot de passe doit contenir au moins une minuscule, une majuscule et un chiffre';
+      newErrors.password = 'Password must contain at least one lowercase letter, one uppercase letter and one number';
     }
     
-    // Validation confirmation mot de passe
+    // Password confirmation validation
     if (!formData.confirmPassword) {
-      newErrors.confirmPassword = 'Confirmation du mot de passe requise';
+      newErrors.confirmPassword = 'Password confirmation is required';
     } else if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Les mots de passe ne correspondent pas';
+      newErrors.confirmPassword = 'Passwords do not match';
     }
     
-    // Validation nom complet (optionnel mais si fourni, doit être valide)
+    // Full name validation (optional but if provided, must be valid)
     if (formData.full_name.trim() && formData.full_name.trim().length < 2) {
-      newErrors.full_name = 'Le nom complet doit contenir au moins 2 caractères';
+      newErrors.full_name = 'Full name must contain at least 2 characters';
     }
     
     setErrors(newErrors);
@@ -93,7 +93,7 @@ const RegisterForm = ({ onSuccess, onSwitchToLogin, onClose }) => {
     setGeneralError('');
     
     try {
-      console.log('📝 Tentative d\'inscription avec:', {
+      console.log('📝 Registration attempt with:', {
         email: formData.email,
         username: formData.username,
         full_name: formData.full_name,
@@ -107,18 +107,18 @@ const RegisterForm = ({ onSuccess, onSwitchToLogin, onClose }) => {
         full_name: formData.full_name.trim() || undefined
       });
       
-      console.log('📡 Résultat inscription:', result);
+      console.log('📡 Registration result:', result);
       
       if (result.success) {
-        console.log('✅ Inscription réussie!');
+        console.log('✅ Registration successful!');
         onSuccess?.(result.data);
       } else {
-        console.error('❌ Échec inscription:', result.error);
+        console.error('❌ Registration failed:', result.error);
         setGeneralError(result.error);
       }
     } catch (error) {
-      console.error('💥 Erreur exceptionnelle lors de l\'inscription:', error);
-      setGeneralError('Erreur lors de l\'inscription. Veuillez réessayer.');
+      console.error('💥 Exception during registration:', error);
+      setGeneralError('Registration error. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -128,10 +128,10 @@ const RegisterForm = ({ onSuccess, onSwitchToLogin, onClose }) => {
     <div className="bg-white rounded-2xl p-8 shadow-xl border border-gray-200 max-w-md w-full">
       <div className="text-center mb-8">
         <h2 className="text-3xl font-bold text-gray-900 mb-2">
-          Inscription
+          Sign Up
         </h2>
         <p className="text-gray-600">
-          Créez votre compte ReadCast
+          Create your ReadCast account
         </p>
       </div>
 
@@ -150,7 +150,7 @@ const RegisterForm = ({ onSuccess, onSwitchToLogin, onClose }) => {
             className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
               errors.email ? 'border-red-300' : 'border-gray-300'
             }`}
-            placeholder="votre@email.com"
+            placeholder="your@email.com"
             disabled={isLoading}
           />
           {errors.email && (
@@ -158,10 +158,10 @@ const RegisterForm = ({ onSuccess, onSwitchToLogin, onClose }) => {
           )}
         </div>
 
-        {/* Nom d'utilisateur */}
+        {/* Username */}
         <div>
           <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
-            Nom d'utilisateur <span className="text-red-500">*</span>
+            Username <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
@@ -172,7 +172,7 @@ const RegisterForm = ({ onSuccess, onSwitchToLogin, onClose }) => {
             className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
               errors.username ? 'border-red-300' : 'border-gray-300'
             }`}
-            placeholder="nom_utilisateur"
+            placeholder="username"
             disabled={isLoading}
           />
           {errors.username && (
@@ -180,10 +180,10 @@ const RegisterForm = ({ onSuccess, onSwitchToLogin, onClose }) => {
           )}
         </div>
 
-        {/* Nom complet */}
+        {/* Full Name */}
         <div>
           <label htmlFor="full_name" className="block text-sm font-medium text-gray-700 mb-2">
-            Nom complet
+            Full Name
           </label>
           <input
             type="text"
@@ -194,7 +194,7 @@ const RegisterForm = ({ onSuccess, onSwitchToLogin, onClose }) => {
             className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
               errors.full_name ? 'border-red-300' : 'border-gray-300'
             }`}
-            placeholder="Votre nom complet"
+            placeholder="Your full name"
             disabled={isLoading}
           />
           {errors.full_name && (

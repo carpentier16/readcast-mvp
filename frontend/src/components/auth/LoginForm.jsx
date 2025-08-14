@@ -19,7 +19,7 @@ const LoginForm = ({ onSuccess, onSwitchToRegister, onClose }) => {
       [name]: value
     }));
     
-    // Effacer l'erreur du champ modifié
+    // Clear field error when modified
     if (errors[name]) {
       setErrors(prev => ({
         ...prev,
@@ -27,7 +27,7 @@ const LoginForm = ({ onSuccess, onSwitchToRegister, onClose }) => {
       }));
     }
     
-    // Effacer l'erreur générale
+    // Clear general error
     if (generalError) {
       setGeneralError('');
     }
@@ -37,11 +37,11 @@ const LoginForm = ({ onSuccess, onSwitchToRegister, onClose }) => {
     const newErrors = {};
     
     if (!formData.email_or_username.trim()) {
-      newErrors.email_or_username = 'Email ou nom d\'utilisateur requis';
+      newErrors.email_or_username = 'Email or username is required';
     }
     
     if (!formData.password) {
-      newErrors.password = 'Mot de passe requis';
+      newErrors.password = 'Password is required';
     }
     
     setErrors(newErrors);
@@ -59,21 +59,21 @@ const LoginForm = ({ onSuccess, onSwitchToRegister, onClose }) => {
     setGeneralError('');
     
     try {
-      console.log('🔐 Tentative de connexion avec:', formData);
+      console.log('🔐 Login attempt with:', formData);
       
       const result = await authService.login(formData);
-      console.log('📡 Résultat connexion:', result);
+      console.log('📡 Login result:', result);
       
       if (result.success) {
-        console.log('✅ Connexion réussie!');
+        console.log('✅ Login successful!');
         onSuccess?.(result.data);
       } else {
-        console.error('❌ Échec connexion:', result.error);
+        console.error('❌ Login failed:', result.error);
         setGeneralError(result.error);
       }
     } catch (error) {
-      console.error('💥 Erreur exceptionnelle lors de la connexion:', error);
-      setGeneralError('Erreur de connexion. Veuillez réessayer.');
+      console.error('💥 Exception during login:', error);
+      setGeneralError('Login error. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -83,18 +83,18 @@ const LoginForm = ({ onSuccess, onSwitchToRegister, onClose }) => {
     <div className="bg-white rounded-2xl p-8 shadow-xl border border-gray-200 max-w-md w-full">
       <div className="text-center mb-8">
         <h2 className="text-3xl font-bold text-gray-900 mb-2">
-          Connexion
+          Sign In
         </h2>
         <p className="text-gray-600">
-          Connectez-vous à votre compte ReadCast
+          Sign in to your ReadCast account
         </p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Email ou nom d'utilisateur */}
+        {/* Email or username */}
         <div>
           <label htmlFor="email_or_username" className="block text-sm font-medium text-gray-700 mb-2">
-            Email ou nom d'utilisateur
+            Email or Username
           </label>
           <input
             type="text"
@@ -105,7 +105,7 @@ const LoginForm = ({ onSuccess, onSwitchToRegister, onClose }) => {
             className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
               errors.email_or_username ? 'border-red-300' : 'border-gray-300'
             }`}
-            placeholder="votre@email.com ou nom_utilisateur"
+            placeholder="your@email.com or username"
             disabled={isLoading}
           />
           {errors.email_or_username && (
@@ -113,10 +113,10 @@ const LoginForm = ({ onSuccess, onSwitchToRegister, onClose }) => {
           )}
         </div>
 
-        {/* Mot de passe */}
+        {/* Password */}
         <div>
           <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-            Mot de passe
+            Password
           </label>
           <input
             type="password"
@@ -127,7 +127,7 @@ const LoginForm = ({ onSuccess, onSwitchToRegister, onClose }) => {
             className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
               errors.password ? 'border-red-300' : 'border-gray-300'
             }`}
-            placeholder="Votre mot de passe"
+            placeholder="Your password"
             disabled={isLoading}
           />
           {errors.password && (
@@ -135,7 +135,7 @@ const LoginForm = ({ onSuccess, onSwitchToRegister, onClose }) => {
           )}
         </div>
 
-        {/* Erreur générale */}
+        {/* General error */}
         {generalError && (
           <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
             <div className="flex items-center">
@@ -147,7 +147,7 @@ const LoginForm = ({ onSuccess, onSwitchToRegister, onClose }) => {
           </div>
         )}
 
-        {/* Bouton de connexion */}
+        {/* Login button */}
         <button
           type="submit"
           disabled={isLoading}
@@ -163,26 +163,26 @@ const LoginForm = ({ onSuccess, onSwitchToRegister, onClose }) => {
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
-              Connexion en cours...
+              Signing in...
             </div>
           ) : (
-            'Se connecter'
+            'Sign In'
           )}
         </button>
       </form>
 
-      {/* Liens d'action */}
+      {/* Action links */}
       <div className="mt-6 text-center">
         <button
           onClick={onSwitchToRegister}
           className="text-blue-600 hover:text-blue-700 font-medium text-sm"
           disabled={isLoading}
         >
-          Pas encore de compte ? S'inscrire
+          Don't have an account? Sign up
         </button>
       </div>
 
-      {/* Bouton fermer */}
+      {/* Close button */}
       {onClose && (
         <button
           onClick={onClose}
