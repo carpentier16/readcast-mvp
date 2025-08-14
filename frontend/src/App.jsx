@@ -13,7 +13,8 @@ import {
   ProjectManager,
   ApiTest,
   TranslationDebug,
-  FormTest
+  FormTest,
+  SimpleTest
 } from './components';
 
 function App() {
@@ -22,6 +23,7 @@ function App() {
   const renderMainView = () => (
     <>
       <Header />
+      <SimpleTest />
       <HeroSection />
       <FeaturesSection />
       <VoiceSection />

@@ -32,6 +32,9 @@ export { default as TranslationDebug } from './TranslationDebug';
 // Composant de test des formulaires
 export { default as FormTest } from './FormTest';
 
+// Composant de test ultra-simple
+export { default as SimpleTest } from './SimpleTest';
+
 // Configuration et Services
 export { default as API_CONFIG } from '../config/api.js';
 export { default as apiService } from '../services/api.js';
