@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from '../hooks/useTranslation.jsx';
-import authService from '../services/auth.js';
+import supabaseAuthService from '../services/supabaseAuth.js';
 import AuthModal from './auth/AuthModal.jsx';
 
 const Header = () => {
@@ -28,7 +28,7 @@ const Header = () => {
   }, []);
 
   const checkAuthStatus = async () => {
-    const result = await authService.checkAuthStatus();
+    const result = await supabaseAuthService.checkAuthStatus();
     setIsAuthenticated(result.isAuthenticated);
     setCurrentUser(result.user);
   };
@@ -52,7 +52,7 @@ const Header = () => {
   };
 
   const handleLogout = async () => {
-    await authService.logout();
+    await supabaseAuthService.logout();
     setIsAuthenticated(false);
     setCurrentUser(null);
     setIsUserMenuOpen(false);

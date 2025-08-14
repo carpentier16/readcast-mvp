@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from '../../hooks/useTranslation.jsx';
-import authService from '../../services/auth.js';
+import supabaseAuthService from '../../services/supabaseAuth.js';
 
 const LoginForm = ({ onSuccess, onSwitchToRegister, onClose }) => {
   const { t } = useTranslation();
@@ -59,20 +59,20 @@ const LoginForm = ({ onSuccess, onSwitchToRegister, onClose }) => {
     setGeneralError('');
     
     try {
-      console.log('🔐 Login attempt with:', formData);
+      console.log('🔐 Login attempt with Supabase:', formData);
       
-      const result = await authService.login(formData);
-      console.log('📡 Login result:', result);
+      const result = await supabaseAuthService.login(formData);
+      console.log('📡 Supabase login result:', result);
       
       if (result.success) {
-        console.log('✅ Login successful!');
+        console.log('✅ Supabase login successful!');
         onSuccess?.(result.data);
       } else {
-        console.error('❌ Login failed:', result.error);
+        console.error('❌ Supabase login failed:', result.error);
         setGeneralError(result.error);
       }
     } catch (error) {
-      console.error('💥 Exception during login:', error);
+      console.error('💥 Exception during Supabase login:', error);
       setGeneralError('Login error. Please try again.');
     } finally {
       setIsLoading(false);

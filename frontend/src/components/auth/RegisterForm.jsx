@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from '../../hooks/useTranslation.jsx';
-import authService from '../../services/auth.js';
+import supabaseAuthService from '../../services/supabaseAuth.js';
 
 const RegisterForm = ({ onSuccess, onSwitchToLogin, onClose }) => {
   const { t } = useTranslation();
@@ -93,31 +93,31 @@ const RegisterForm = ({ onSuccess, onSwitchToLogin, onClose }) => {
     setGeneralError('');
     
     try {
-      console.log('📝 Registration attempt with:', {
+      console.log('📝 Registration attempt with Supabase:', {
         email: formData.email,
         username: formData.username,
         full_name: formData.full_name,
         password_length: formData.password.length
       });
       
-      const result = await authService.register({
+      const result = await supabaseAuthService.register({
         email: formData.email.trim(),
         username: formData.username.trim(),
         password: formData.password,
         full_name: formData.full_name.trim() || undefined
       });
       
-      console.log('📡 Registration result:', result);
+      console.log('📡 Supabase registration result:', result);
       
       if (result.success) {
-        console.log('✅ Registration successful!');
+        console.log('✅ Supabase registration successful!');
         onSuccess?.(result.data);
       } else {
-        console.error('❌ Registration failed:', result.error);
+        console.error('❌ Supabase registration failed:', result.error);
         setGeneralError(result.error);
       }
     } catch (error) {
-      console.error('💥 Exception during registration:', error);
+      console.error('💥 Exception during Supabase registration:', error);
       setGeneralError('Registration error. Please try again.');
     } finally {
       setIsLoading(false);
