@@ -1,26 +1,26 @@
 export const navTranslations = {
   en: {
-    "nav.features": "Features",
-    "nav.pricing": "Pricing", 
-    "nav.about": "About",
-    "nav.signIn": "Sign In",
-    "nav.getStarted": "Get Started",
-    "nav.language": "Language"
+    "features": "Features",
+    "pricing": "Pricing", 
+    "about": "About",
+    "signIn": "Sign In",
+    "getStarted": "Get Started",
+    "language": "Language"
   },
   fr: {
-    "nav.features": "Fonctionnalités",
-    "nav.pricing": "Tarifs", 
-    "nav.about": "À propos",
-    "nav.signIn": "Se connecter",
-    "nav.getStarted": "Commencer",
-    "nav.language": "Langue"
+    "features": "Fonctionnalités",
+    "pricing": "Tarifs", 
+    "about": "À propos",
+    "signIn": "Se connecter",
+    "getStarted": "Commencer",
+    "language": "Langue"
   },
   es: {
-    "nav.features": "Características",
-    "nav.pricing": "Precios", 
-    "nav.about": "Acerca de",
-    "nav.signIn": "Iniciar sesión",
-    "nav.getStarted": "Comenzar",
-    "nav.language": "Idioma"
+    "features": "Características",
+    "pricing": "Precios", 
+    "about": "Acerca de",
+    "signIn": "Iniciar sesión",
+    "getStarted": "Comenzar",
+    "language": "Idioma"
   }
 }; 
