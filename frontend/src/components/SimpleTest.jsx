@@ -90,6 +90,23 @@ const SimpleTest = () => {
             <button
               onClick={async () => {
                 try {
+                  console.log('🔍 Testing API root endpoint...');
+                  const response = await fetch('https://audiobook-api.onrender.com/');
+                  const data = await response.text();
+                  console.log('✅ API Root endpoint:', response.status, data);
+                  alert(`API Root: ${response.status} - ${data.substring(0, 200)}...`);
+                } catch (error) {
+                  console.error('❌ API Root endpoint failed:', error);
+                  alert(`API Root Error: ${error.message}`);
+                }
+              }}
+              className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 mr-2"
+            >
+              Test API Root
+            </button>
+            <button
+              onClick={async () => {
+                try {
                   console.log('🔍 Testing API connectivity...');
                   const response = await fetch('https://audiobook-api.onrender.com/health');
                   const data = await response.json();
