@@ -1,7 +1,7 @@
 // Configuration de l'environnement
 export const config = {
-  // URL de l'API backend
-  API_URL: import.meta.env.VITE_API_URL || 'http://localhost:8000',
+  // URL de l'API backend - Utiliser Render en production, localhost en développement
+  API_URL: import.meta.env.VITE_API_URL || 'https://audiobook-api.onrender.com',
   
   // Mode de développement
   DEV_MODE: import.meta.env.VITE_DEV_MODE === 'true',

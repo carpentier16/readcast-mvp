@@ -62,9 +62,11 @@ class AuthService {
   // Inscription d'un nouvel utilisateur
   async register(userData) {
     try {
-      devLog('Tentative d\'inscription:', userData.email);
+      const apiUrl = getApiUrl('/api/auth/register');
+      devLog('Tentative d\'inscription vers:', apiUrl);
+      devLog('Données d\'inscription:', userData);
       
-      const response = await fetch(getApiUrl('/api/auth/register'), {
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -72,7 +74,10 @@ class AuthService {
         body: JSON.stringify(userData),
       });
 
+      devLog('Réponse inscription:', response.status, response.statusText);
+
       const data = await response.json();
+      devLog('Données réponse:', data);
 
       if (!response.ok) {
         throw new Error(data.error || 'Erreur lors de l\'inscription');
@@ -95,9 +100,11 @@ class AuthService {
   // Connexion utilisateur
   async login(credentials) {
     try {
-      devLog('Tentative de connexion:', credentials.email_or_username);
+      const apiUrl = getApiUrl('/api/auth/login');
+      devLog('Tentative de connexion vers:', apiUrl);
+      devLog('Identifiants:', credentials);
       
-      const response = await fetch(getApiUrl('/api/auth/login'), {
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -105,7 +112,10 @@ class AuthService {
         body: JSON.stringify(credentials),
       });
 
+      devLog('Réponse connexion:', response.status, response.statusText);
+
       const data = await response.json();
+      devLog('Données réponse:', data);
 
       if (!response.ok) {
         throw new Error(data.error || 'Erreur lors de la connexion');
