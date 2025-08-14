@@ -1,9 +1,21 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 const SimpleTest = () => {
+  const [testInput, setTestInput] = useState('');
+  const [testPassword, setTestPassword] = useState('');
+
   const handleClick = () => {
     console.log('🔍 Simple button clicked!');
     alert('Simple button works!');
+  };
+
+  const handleInputChange = (e) => {
+    console.log('🔍 Input change:', e.target.name, e.target.value);
+    if (e.target.name === 'testInput') {
+      setTestInput(e.target.value);
+    } else if (e.target.name === 'testPassword') {
+      setTestPassword(e.target.value);
+    }
   };
 
   return (
@@ -23,6 +35,47 @@ const SimpleTest = () => {
         >
           Cliquez-moi (Test Simple)
         </button>
+        
+        {/* Test des formulaires */}
+        <div className="bg-white p-4 rounded border mt-4">
+          <h3 className="font-semibold text-gray-800 mb-3">🧪 Test des Champs de Saisie</h3>
+          
+          <div className="space-y-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Test Input:
+              </label>
+              <input
+                type="text"
+                name="testInput"
+                value={testInput}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                placeholder="Tapez quelque chose ici..."
+              />
+              <p className="text-xs text-gray-600 mt-1">
+                Valeur: "{testInput}"
+              </p>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Test Password:
+              </label>
+              <input
+                type="password"
+                name="testPassword"
+                value={testPassword}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                placeholder="Mot de passe test"
+              />
+              <p className="text-xs text-gray-600 mt-1">
+                Longueur: {testPassword.length} caractères
+              </p>
+            </div>
+          </div>
+        </div>
         
         <div className="bg-white p-3 rounded border">
           <p className="text-sm text-gray-700">
