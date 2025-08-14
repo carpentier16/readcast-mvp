@@ -1,8 +1,12 @@
 import React, { useState } from 'react';
+import LoginForm from './auth/LoginForm.jsx';
+import RegisterForm from './auth/RegisterForm.jsx';
 
 const SimpleTest = () => {
   const [testInput, setTestInput] = useState('');
   const [testPassword, setTestPassword] = useState('');
+  const [showLoginForm, setShowLoginForm] = useState(false);
+  const [showRegisterForm, setShowRegisterForm] = useState(false);
 
   const handleClick = () => {
     console.log('🔍 Simple button clicked!');
@@ -26,6 +30,13 @@ const SimpleTest = () => {
     alert('Auth modal test triggered! Check if modal opened.');
   };
 
+  const handleAuthSuccess = (data) => {
+    console.log('🔍 Auth success:', data);
+    alert('Authentication successful!');
+    setShowLoginForm(false);
+    setShowRegisterForm(false);
+  };
+
   return (
     <div className="bg-red-100 border border-red-400 rounded-lg p-6 m-4">
       <h2 className="text-xl font-bold text-red-800 mb-4">
@@ -47,16 +58,51 @@ const SimpleTest = () => {
         {/* Test de l'authentification */}
         <div className="bg-blue-100 p-4 rounded border">
           <h3 className="font-semibold text-blue-800 mb-3">🔐 Test de l'Authentification</h3>
-          <button
-            onClick={testAuthModal}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
-            Test Modal d'Authentification
-          </button>
+          <div className="space-y-2">
+            <button
+              onClick={testAuthModal}
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 mr-2"
+            >
+              Test Modal d'Authentification
+            </button>
+            <button
+              onClick={() => setShowLoginForm(true)}
+              className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 mr-2"
+            >
+              Test LoginForm Direct
+            </button>
+            <button
+              onClick={() => setShowRegisterForm(true)}
+              className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
+            >
+              Test RegisterForm Direct
+            </button>
+          </div>
           <p className="text-xs text-blue-700 mt-2">
-            Ce bouton teste si le modal d'auth peut être ouvert
+            Ces boutons testent directement les composants d'authentification
           </p>
         </div>
+
+        {/* Affichage des formulaires d'authentification */}
+        {showLoginForm && (
+          <div className="bg-white p-4 rounded border">
+            <h3 className="font-semibold text-gray-800 mb-3">🔑 Test LoginForm</h3>
+            <LoginForm
+              onSuccess={handleAuthSuccess}
+              onClose={() => setShowLoginForm(false)}
+            />
+          </div>
+        )}
+
+        {showRegisterForm && (
+          <div className="bg-white p-4 rounded border">
+            <h3 className="font-semibold text-gray-800 mb-3">📝 Test RegisterForm</h3>
+            <RegisterForm
+              onSuccess={handleAuthSuccess}
+              onClose={() => setShowRegisterForm(false)}
+            />
+          </div>
+        )}
         
         {/* Test des formulaires */}
         <div className="bg-white p-4 rounded border mt-4">
